@@ -4,20 +4,20 @@
 
 ## Tasks
 
-- [ ] 1. Preparar infraestructura del sistema de Power-Ups
-  - [ ] 1.1 Crear `powerups.js`
-  - [ ] 1.2 Definir `POWER_UP_TYPES`
-  - [ ] 1.3 Definir configuración de spawn, colores, duración y cargas
-  - [ ] 1.4 Implementar helpers de sanitización y reset
+- [x] 1. Preparar infraestructura del sistema de Power-Ups
+  - [x] 1.1 Crear `powerups.js`
+  - [x] 1.2 Definir `POWER_UP_TYPES`
+  - [x] 1.3 Definir configuración de spawn, colores, duración y cargas
+  - [x] 1.4 Implementar helpers de sanitización y reset
   - _Requirements: 1, 12, 13_
 
-- [ ] 2. Ampliar GameState
-  - [ ] 2.1 Añadir `nextPowerUp`
-  - [ ] 2.2 Añadir `activePowerUps.freezeTimer`
-  - [ ] 2.3 Añadir `activePowerUps.shieldCharges`
-  - [ ] 2.4 Añadir `activePowerUps.doubleScoreHits`
-  - [ ] 2.5 Añadir flag para impedir Power-Ups consecutivos
-  - [ ] 2.6 Garantizar reset correcto al iniciar nueva partida
+- [x] 2. Ampliar GameState
+  - [x] 2.1 Añadir `nextPowerUp`
+  - [x] 2.2 Añadir `activePowerUps.freezeTimer`
+  - [x] 2.3 Añadir `activePowerUps.shieldCharges`
+  - [x] 2.4 Añadir `activePowerUps.doubleScoreHits`
+  - [x] 2.5 Añadir flag para impedir Power-Ups consecutivos
+  - [x] 2.6 Garantizar reset correcto al iniciar nueva partida
   - _Requirements: 1, 12_
 
 - [ ] 3. Implementar generación de Power-Ups

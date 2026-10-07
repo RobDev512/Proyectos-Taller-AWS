@@ -3,6 +3,7 @@
  */
 
 import { CONFIG, DIFFICULTIES } from './config.js';
+import { createActivePowerUps } from './powerups.js';
 
 function randomIcon() {
   return CONFIG.AWS_ICONS[Math.floor(Math.random() * CONFIG.AWS_ICONS.length)];
@@ -24,41 +25,59 @@ function randomIcon() {
  * @property {boolean} pendingLaunch
  * @property {number} gameOverTimestamp
  * @property {string} nextArrowId
+ * @property {string|null} nextPowerUp
+ * @property {{freezeTimer:number, shieldCharges:number, doubleScoreHits:number}} activePowerUps
+ * @property {boolean} lastPreparedWasPowerUp
  * @property {string} difficulty
  * @property {number} lastReverseScore
  */
 
-export function createInitialState(highScore = 0, difficulty = CONFIG.DEFAULT_DIFFICULTY, stats = null) {
+export function createInitialState(
+  highScore = 0,
+  difficulty = CONFIG.DEFAULT_DIFFICULTY,
+  stats = null,
+) {
   const diff = DIFFICULTIES[difficulty] ?? DIFFICULTIES.medium;
+
   return {
-    phase:   'idle',
-    score:   0,
+    phase: 'idle',
+    score: 0,
     highScore,
+
     level: 1,
     levelHits: 0,
     levelTransitionTimer: 0,
     levelCompleteBonus: 0,
     completedLevel: 0,
+
     centralElement: {
-      x:            CONFIG.CANVAS_WIDTH  / 2,
-      y:            CONFIG.CANVAS_HEIGHT / 2,
-      radius:       CONFIG.CENTRAL_RADIUS,
-      angle:        0,
-      speed:        diff.baseSpeed,
-      baseSpeed:    diff.baseSpeed,
-      direction:    1,
+      x: CONFIG.CANVAS_WIDTH / 2,
+      y: CONFIG.CANVAS_HEIGHT / 2,
+      radius: CONFIG.CENTRAL_RADIUS,
+      angle: 0,
+      speed: diff.baseSpeed,
+      baseSpeed: diff.baseSpeed,
+      direction: 1,
       reverseTimer: 0,
     },
-    flyingProjectile:    null,
+
+    flyingProjectile: null,
     anchoredProjectiles: [],
-    pendingLaunch:       false,
-    gameOverTimestamp:   0,
-    nextArrowId:         randomIcon(),
+    pendingLaunch: false,
+    gameOverTimestamp: 0,
+
+    nextArrowId: randomIcon(),
+
+    nextPowerUp: null,
+    activePowerUps: createActivePowerUps(),
+    lastPreparedWasPowerUp: false,
+
     difficulty,
-    lastReverseScore:    0,
-    lastTier:            1,
-    comboLevel:          1,
-    lastAnchorTime:      0,
+    lastReverseScore: 0,
+    lastTier: 1,
+    comboLevel: 1,
+    lastAnchorTime: 0,
+
     stats,
   };
 }
