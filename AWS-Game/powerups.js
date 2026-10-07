@@ -1,8 +1,8 @@
 /**
  * powerups.js — Sistema de Power-Ups de AWS Arcade Game.
  *
- * Contiene tipos, configuración, helpers de estado y generación
- * probabilística de Power-Up Arrows.
+ * Contiene tipos, configuración, helpers de estado, generación
+ * probabilística y lógica de efectos activos.
  */
 
 export const POWER_UP_TYPES = Object.freeze({
@@ -239,4 +239,165 @@ export function rollNextPowerUp(state, randomFn = Math.random) {
 
   state.lastPreparedWasPowerUp = true;
   return selected;
+}
+
+/**
+ * Indica si Freeze está activo.
+ *
+ * @param {Object} state
+ * @returns {boolean}
+ */
+export function isFreezeActive(state) {
+  return Boolean(
+    state &&
+    state.activePowerUps &&
+    Number(state.activePowerUps.freezeTimer) > 0
+  );
+}
+
+/**
+ * Activa uno de los Power-Ups persistentes implementados hasta ahora.
+ *
+ * Cleanup se implementará en su propia tarea porque necesita eliminar
+ * un Anchored Projectile y devolver su posición para feedback.
+ *
+ * @param {Object} state
+ * @param {string|null} type
+ * @returns {{type:string|null, activated:boolean, removedProjectile:null}}
+ */
+export function activatePowerUp(state, type) {
+  if (!state || typeof state !== 'object' || !isPowerUpType(type)) {
+    return {
+      type: isPowerUpType(type) ? type : null,
+      activated: false,
+      removedProjectile: null,
+    };
+  }
+
+  if (
+    !state.activePowerUps ||
+    typeof state.activePowerUps !== 'object'
+  ) {
+    state.activePowerUps = createActivePowerUps();
+  }
+
+  switch (type) {
+    case POWER_UP_TYPES.FREEZE:
+      state.activePowerUps.freezeTimer =
+        POWER_UP_CONFIG.freezeDuration;
+      break;
+
+    case POWER_UP_TYPES.SHIELD:
+      state.activePowerUps.shieldCharges =
+        POWER_UP_CONFIG.shieldMaxCharges;
+      break;
+
+    case POWER_UP_TYPES.DOUBLE:
+      state.activePowerUps.doubleScoreHits =
+        POWER_UP_CONFIG.doubleScoreHits;
+      break;
+
+    default:
+      return {
+        type,
+        activated: false,
+        removedProjectile: null,
+      };
+  }
+
+  return {
+    type,
+    activated: true,
+    removedProjectile: null,
+  };
+}
+
+/**
+ * Actualiza los efectos activos basados en tiempo.
+ *
+ * Debe invocarse únicamente durante `phase === 'playing'`.
+ * De esta forma Freeze queda pausado durante levelcomplete,
+ * idle y gameover.
+ *
+ * @param {Object} state
+ * @param {number} deltaTime Segundos transcurridos.
+ */
+export function updatePowerUps(state, deltaTime) {
+  if (
+    !state ||
+    typeof state !== 'object' ||
+    !state.activePowerUps ||
+    typeof state.activePowerUps !== 'object'
+  ) {
+    return;
+  }
+
+  const dt = Number(deltaTime);
+  if (!Number.isFinite(dt) || dt <= 0) {
+    return;
+  }
+
+  const freezeTimer = Number(state.activePowerUps.freezeTimer);
+
+  state.activePowerUps.freezeTimer =
+    Number.isFinite(freezeTimer) && freezeTimer > 0
+      ? Math.max(0, freezeTimer - dt)
+      : 0;
+}
+
+/**
+ * Consume un Shield Charge.
+ *
+ * @param {Object} state
+ * @returns {boolean} true cuando una carga fue consumida.
+ */
+export function consumeShield(state) {
+  if (
+    !state ||
+    !state.activePowerUps ||
+    Number(state.activePowerUps.shieldCharges) <= 0
+  ) {
+    return false;
+  }
+
+  state.activePowerUps.shieldCharges = 0;
+  return true;
+}
+
+/**
+ * Indica si Double Score está activo.
+ *
+ * @param {Object} state
+ * @returns {boolean}
+ */
+export function isDoubleScoreActive(state) {
+  return Boolean(
+    state &&
+    state.activePowerUps &&
+    Number(state.activePowerUps.doubleScoreHits) > 0
+  );
+}
+
+/**
+ * Consume un hit de Double Score.
+ *
+ * @param {Object} state
+ * @returns {number} Hits restantes.
+ */
+export function consumeDoubleScoreHit(state) {
+  if (
+    !state ||
+    !state.activePowerUps ||
+    Number(state.activePowerUps.doubleScoreHits) <= 0
+  ) {
+    return 0;
+  }
+
+  const remaining = Math.max(
+    0,
+    Math.floor(Number(state.activePowerUps.doubleScoreHits)) - 1,
+  );
+
+  state.activePowerUps.doubleScoreHits = remaining;
+  return remaining;
 }

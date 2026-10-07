@@ -36,31 +36,31 @@
   - [x] 4.4 Mantener intactos `awsIconId`, radius y velocidad
   - _Requirements: 2, 3, 13_
 
-- [ ] 5. Implementar Freeze
-  - [ ] 5.1 Activar Freeze Timer de 2 segundos
-  - [ ] 5.2 Detener `updateRotation` durante Freeze en `playing`
-  - [ ] 5.3 Pausar timer durante `levelcomplete`
-  - [ ] 5.4 Restaurar progression normal al finalizar
-  - [ ] 5.5 Verificar que dirección y baseSpeed no sean alterados
+- [x] 5. Implementar Freeze
+  - [x] 5.1 Activar Freeze Timer de 2 segundos
+  - [x] 5.2 Detener `updateRotation` durante Freeze en `playing`
+  - [x] 5.3 Pausar timer durante `levelcomplete`
+  - [x] 5.4 Restaurar progression normal al finalizar
+  - [x] 5.5 Verificar que dirección y baseSpeed no sean alterados
   - _Requirements: 4_
 
-- [ ] 6. Implementar Shield
-  - [ ] 6.1 Activar máximo 1 Shield Charge
-  - [ ] 6.2 Interceptar `'collision'` en `gameLoop.js`
-  - [ ] 6.3 Consumir Shield antes de ejecutar Game Over
-  - [ ] 6.4 Eliminar Flying Projectile tras Shield Save
-  - [ ] 6.5 Resetear Combo
-  - [ ] 6.6 No modificar Score ni Level Hits
-  - [ ] 6.7 Mantener `collision.js` y hitbox `0.35` intactos
+- [x] 6. Implementar Shield
+  - [x] 6.1 Activar máximo 1 Shield Charge
+  - [x] 6.2 Interceptar `'collision'` en `gameLoop.js`
+  - [x] 6.3 Consumir Shield antes de ejecutar Game Over
+  - [x] 6.4 Eliminar Flying Projectile tras Shield Save
+  - [x] 6.5 Resetear Combo
+  - [x] 6.6 No modificar Score ni Level Hits
+  - [x] 6.7 Mantener `collision.js` y hitbox `0.35` intactos
   - _Requirements: 5, 13_
 
-- [ ] 7. Implementar Double Score
-  - [ ] 7.1 Activar efecto para los próximos 3 hits
-  - [ ] 7.2 Aplicar después de Base + Perfect + Combo
-  - [ ] 7.3 Actualizar High Score
-  - [ ] 7.4 Consumir una carga por hit exitoso
-  - [ ] 7.5 No duplicar Level Complete Bonus
-  - [ ] 7.6 Evitar que la flecha que lo activa se beneficie a sí misma
+- [x] 7. Implementar Double Score
+  - [x] 7.1 Activar efecto para los próximos 3 hits
+  - [x] 7.2 Aplicar después de Base + Perfect + Combo
+  - [x] 7.3 Actualizar High Score
+  - [x] 7.4 Consumir una carga por hit exitoso
+  - [x] 7.5 No duplicar Level Complete Bonus
+  - [x] 7.6 Evitar que la flecha que lo activa se beneficie a sí misma
   - _Requirements: 6, 8_
 
 - [ ] 8. Implementar Cleanup

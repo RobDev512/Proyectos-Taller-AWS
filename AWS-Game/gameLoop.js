@@ -43,6 +43,13 @@ import {
   beginLevelComplete,
   advanceToNextLevel,
 } from './levels.js';
+import {
+  consumeDoubleScoreHit,
+  consumeShield,
+  isDoubleScoreActive,
+  isFreezeActive,
+  updatePowerUps,
+} from './powerups.js';
 
 let rafId = null;
 let overlayShown = false;
@@ -81,7 +88,13 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         playSoundLaunch();
       }
 
-      updateRotation(state, deltaTime, progression);
+      // Freeze detiene por completo la rotación durante gameplay.
+      // El timer solo disminuye mientras phase === 'playing'.
+      if (isFreezeActive(state)) {
+        updatePowerUps(state, deltaTime);
+      } else {
+        updateRotation(state, deltaTime, progression);
+      }
 
       if (
         progression.reverseEvery > 0 &&
@@ -124,6 +137,15 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             state.score += mult - 1;
             updateHighScore(state);
             if (!precision.perfect) playSoundCombo(mult);
+          }
+
+          // Double Score duplica exactamente lo ganado por este tiro
+          // (base + Perfect + Combo), antes de cualquier bonus de nivel.
+          const normalShotGain = state.score - scoreBefore;
+          if (isDoubleScoreActive(state)) {
+            state.score += normalShotGain;
+            consumeDoubleScoreHit(state);
+            updateHighScore(state);
           }
 
           playSoundAnchor(mult);
@@ -171,16 +193,23 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
           }
 
         } else if (result === 'collision') {
-          state.phase = 'gameover';
-          state.gameOverTimestamp = performance.now();
-          overlayShown = false;
-          flashTimer = 0.25;
-          if (state.stats) recordGameOver(state.stats);
-          playSoundGameOver();
+          // Shield intercepta el resultado después de checkCollision().
+          // collision.js y su hitbox permanecen completamente intactos.
+          if (consumeShield(state)) {
+            state.flyingProjectile = null;
+            resetCombo(state);
+          } else {
+            state.phase = 'gameover';
+            state.gameOverTimestamp = performance.now();
+            overlayShown = false;
+            flashTimer = 0.25;
+            if (state.stats) recordGameOver(state.stats);
+            playSoundGameOver();
+          }
         }
       }
     } else if (state.phase === 'levelcomplete') {
-      // Mantener el disco vivo durante la transición para que no se sienta congelado.
+      // Freeze se pausa durante la transición; el disco puede seguir animándose.
       updateRotation(state, deltaTime, progression);
       state.levelTransitionTimer -= deltaTime;
 
