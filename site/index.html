@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyectos Taller AWS</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #0d1117;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 32px;
+    }
+
+    main {
+      width: min(900px, 100%);
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #aab4c3;
+      margin-bottom: 32px;
+    }
+
+    .projects {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .project {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .project h2 {
+      margin-top: 0;
+      color: #ff9900;
+    }
+
+    .project p {
+      color: #c9d1d9;
+      line-height: 1.5;
+    }
+
+    .project a {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 10px 16px;
+      background: #ff9900;
+      color: #111111;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Proyectos Taller AWS</h1>
+    <p class="subtitle">
+      Proyectos, ejercicios y experimentos realizados durante talleres relacionados con AWS.
+    </p>
+
+    <section class="projects">
+      <article class="project">
+        <h2>AWS-Game</h2>
+        <p>
+          Juego arcade con temática de AWS desarrollado con HTML, CSS,
+          JavaScript y Kiro.
+        </p>
+        <p><strong>Versión actual:</strong> v1.2.1 - HUD Fix</p>
+        <a href="./AWS-Game/">Jugar AWS-Game</a>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
