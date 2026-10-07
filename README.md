@@ -8,6 +8,12 @@ Repositorio general para proyectos, ejercicios, pruebas y experimentos realizado
 
 Juego arcade desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development.
 
+🎮 **Jugar en línea:**  
+https://robdev512.github.io/AWS-Game/
+
+📦 **Repositorio público del juego:**  
+https://github.com/RobDev512/AWS-Game
+
 El proyecto está desarrollado con:
 
 - HTML
@@ -24,7 +30,7 @@ Sin frameworks externos.
 - `aws-game-v1.1.0` — Progression Update
 - `aws-game-v1.2.0` — Level Update
 
-Las versiones anteriores pueden consultarse mediante los tags de Git.
+Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
 ## Estructura del repositorio
 
@@ -42,3 +48,7 @@ La versión original fue creada como parte de un reto de desarrollo arcade con t
 La mecánica consiste en lanzar proyectiles hacia un elemento central en rotación evitando colisionar con los proyectiles ya colocados.
 
 Posteriormente el proyecto continuó desarrollándose fuera del workshop con nuevas versiones, sistemas de progresión, estadísticas, niveles y otras mejoras.
+
+La versión estable publicada actualmente es:
+
+**v1.2.0 - Level Update**
