@@ -8,10 +8,10 @@ Repositorio general para proyectos, ejercicios, pruebas y experimentos realizado
 
 Juego arcade desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development.
 
-🎮 **Jugar en línea:**  
+🎮 **Jugar en línea:**
 https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
-📦 **Repositorio público del juego:**  
+📦 **Repositorio público del juego:**
 https://github.com/RobDev512/Proyectos-Taller-AWS/tree/main/AWS-Game
 
 El proyecto está desarrollado con:
@@ -31,6 +31,8 @@ Sin frameworks externos.
 - `aws-game-v1.2.0` — Level Update
 - `aws-game-v1.2.1` — HUD Fix
 - `aws-game-v1.3.0` — Power-Ups Update
+- `aws-game-v1.3.1` — Interactive Power-Ups Patch
+- `aws-game-v1.3.2` — Power Core Update
 
 Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
@@ -53,4 +55,4 @@ Posteriormente el proyecto continuó desarrollándose fuera del workshop con nue
 
 La versión estable publicada actualmente es:
 
-**v1.3.0 - Power-Ups Update**
+**v1.3.2 - Power Core Update**

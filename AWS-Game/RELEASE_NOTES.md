@@ -1,5 +1,36 @@
 # AWS Arcade Game — Release Notes
 
+## v1.3.2 - Power Core Update
+
+Esta actualización reemplaza la obtención pasiva de Power-Ups por una mecánica integrada directamente al timing del juego.
+
+### Power Charge
+- Cada acierto aporta `+12` de carga.
+- Perfect Shot aporta `+14` adicional.
+- Cada nivel extra de combo aporta `+4` adicional, con límite moderado por tiro.
+- Completar un nivel aporta `+20`.
+- La carga se conserva entre niveles.
+
+### Power Core
+- Al llegar a 100 % de Power Charge aparece un Core orbitando alrededor del disco.
+- El Core cambia de color y tipo aproximadamente cada 0.72 segundos.
+- Solo rota entre Power-Ups que todavía tienen espacio en el inventario.
+- Para capturarlo, una flecha debe atravesar físicamente el Core y luego anclarse con éxito.
+- Atravesarlo y después chocar no concede el Power-Up.
+- Un fallo no destruye el Core: permanece disponible para otro intento.
+
+### Power-Up Dock
+- El Dock interactivo de v1.3.1 se mantiene sin cambios conceptuales.
+- Los Power-Ups capturados se almacenan allí y se activan con clic/tap o teclas `1–4`.
+- Se elimina la obtención mediante Power-Up Arrows; todas las flechas vuelven a ser proyectiles normales.
+
+### Compatibilidad
+- No se altera `collision.js`.
+- La hitbox permanece exactamente en `fp.radius * 0.35`.
+- El juego continúa siendo HTML, CSS y JavaScript nativo.
+
+---
+
 ## v1.3.1 - Interactive Power-Ups Patch
 - Hotfix visual del Power-Up Dock: botones más claros, textos sin recorte, hover visible y activación de teclas numéricas reforzada.
 

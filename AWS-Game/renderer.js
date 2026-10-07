@@ -4,12 +4,12 @@ import {
   POWER_UP_CONFIG,
   POWER_UP_ORDER,
   canActivateStoredPowerUp,
-  isPowerUpType,
 } from './powerups.js';
 import {
   getPowerUpChargeRect,
   getPowerUpSlotRects,
 } from './powerupUi.js';
+import { getPowerCorePosition } from './powercore.js';
 
 /**
  * renderer.js — AWS Arcade Game
@@ -207,40 +207,6 @@ function drawArrow(ctx, cx, cy, radius, angle, awsIconId, assets) {
   ctx.restore();
 }
 
-// ---------------------------------------------------------------------------
-// Power-Up marker — badge visual adicional; no altera dimensiones ni hitbox.
-// ---------------------------------------------------------------------------
-function drawPowerUpMarker(ctx, x, y, radius, type) {
-  if (!isPowerUpType(type)) return;
-
-  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
-  const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
-  const badgeR = Math.max(9, radius * 0.52);
-  const bx = x + radius * 0.92;
-  const by = y - radius * 1.18;
-
-  ctx.save();
-
-  ctx.beginPath();
-  ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 9;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  ctx.strokeStyle = 'rgba(255,255,255,.86)';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `bold ${Math.max(7, Math.floor(badgeR * 0.78))}px "Amazon Ember", Arial, sans-serif`;
-  ctx.fillStyle = '#0E1824';
-  ctx.fillText(label, bx, by + 0.5);
-
-  ctx.restore();
-}
 
 // ---------------------------------------------------------------------------
 // drawTierIndicator — fila de estrellas que indica el tier de progresión
@@ -648,10 +614,24 @@ function drawPowerUpDock(ctx, state, canvasW) {
   ctx.textAlign = 'left';
   ctx.font = 'bold 8px "Amazon Ember", Arial, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,.50)';
+  const coreActive = Boolean(state.powerCore?.active);
+  const coreType = state.powerCore?.currentType;
+  const coreColor = coreType
+    ? POWER_UP_CONFIG.colors[coreType] ?? '#FF9900'
+    : '#FF9900';
+
+  ctx.fillStyle = coreActive
+    ? coreColor
+    : 'rgba(255,255,255,.50)';
+
   ctx.fillText(
     state.level < POWER_UP_CONFIG.minLevel
       ? 'LOCKED'
-      : 'EARN POWER BY PLAYING WELL',
+      : coreActive
+        ? `CORE ACTIVE • ${POWER_UP_CONFIG.labels[coreType] ?? 'PU'}`
+        : charge >= POWER_UP_CONFIG.chargeMax
+          ? 'CORE WAITING FOR FREE SLOT'
+          : 'EARN POWER BY PLAYING WELL',
     chargeRect.x + 9,
     chargeRect.y + 46,
   );
@@ -694,8 +674,16 @@ function drawBottomHint(ctx, state, canvasW, canvasH) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = '11px "Amazon Ember", Arial, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.43)';
-  ctx.fillText('CLIC/ESPACIO: LANZAR  •  POWER-UPS: CLIC O 1–4', canvasW / 2, canvasH - 18);
+  ctx.fillStyle = state.powerCore?.active
+    ? 'rgba(255,184,77,.72)'
+    : 'rgba(255,255,255,.43)';
+  ctx.fillText(
+    state.powerCore?.active
+      ? 'POWER CORE: ATRAVIÉSALO Y ANCLA  •  POWER-UPS: CLIC O 1–4'
+      : 'CLIC/ESPACIO: LANZAR  •  POWER-UPS: CLIC O 1–4',
+    canvasW / 2,
+    canvasH - 18,
+  );
   ctx.restore();
 }
 
@@ -715,6 +703,104 @@ export function drawGameOverFlash(ctx, flashTimer) {
   ctx.save();
   ctx.fillStyle = `rgba(255,70,70,${alpha})`;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Power Core — recompensa orbitante que debe atravesarse con un tiro válido.
+// ---------------------------------------------------------------------------
+function drawPowerCore(ctx, state) {
+  const position = getPowerCorePosition(state);
+  if (!position) return;
+
+  const type = position.type;
+  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+  const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
+  const name = POWER_UP_CONFIG.names[type] ?? 'POWER';
+  const pulse = state.powerCore?.pulse ?? 0;
+  const pulseScale = 1 + Math.sin(pulse * 7) * 0.08;
+
+  ctx.save();
+
+  // Órbita guía tenue.
+  ctx.beginPath();
+  ctx.arc(
+    state.centralElement.x,
+    state.centralElement.y,
+    position.orbitRadius,
+    0,
+    Math.PI * 2,
+  );
+  ctx.setLineDash([5, 8]);
+  ctx.strokeStyle = `${color}28`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Halo exterior.
+  ctx.beginPath();
+  ctx.arc(
+    position.x,
+    position.y,
+    (position.radius + 8) * pulseScale,
+    0,
+    Math.PI * 2,
+  );
+  ctx.strokeStyle = `${color}70`;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Núcleo.
+  ctx.beginPath();
+  ctx.arc(
+    position.x,
+    position.y,
+    position.radius * pulseScale,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = 'rgba(13,17,23,.94)';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 12;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Punto energético central.
+  ctx.beginPath();
+  ctx.arc(
+    position.x,
+    position.y,
+    Math.max(4, position.radius * 0.35),
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 8px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText(
+    label,
+    position.x,
+    position.y + position.radius + 13,
+  );
+
+  ctx.font = 'bold 7px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = color;
+  ctx.fillText(
+    name,
+    position.x,
+    position.y + position.radius + 23,
+  );
+
   ctx.restore();
 }
 
@@ -808,7 +894,6 @@ function drawReadyArrow(ctx, state, assets, canvasW, canvasH) {
   drawArrow(ctx, cx, floatY, r, 0, state.nextArrowId, assets);
   ctx.globalAlpha = 1;
 
-  drawPowerUpMarker(ctx, cx, floatY, r, state.nextPowerUp);
 }
 
 function drawLevelCompleteOverlay(ctx, state) {
@@ -904,12 +989,14 @@ export function render(ctx, state, assets, progression = null) {
     drawArrow(ctx, apX, apY, ap.radius, arrowAngle, ap.awsIconId, assets);
   }
 
+  // Power Core orbitante. La flecha debe atravesarlo y después anclarse.
+  drawPowerCore(ctx, state);
+
   // Proyectil en vuelo
   if (flyingProjectile) {
     const fp = flyingProjectile;
     const flyAngle = Math.atan2(fp.vy, fp.vx) + Math.PI / 2;
     drawArrow(ctx, fp.x, fp.y, fp.radius, flyAngle, fp.awsIconId, assets);
-    drawPowerUpMarker(ctx, fp.x, fp.y, fp.radius, fp.powerUpType);
   }
 
   // Flecha en espera (visible antes de lanzar)

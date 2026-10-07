@@ -70,8 +70,8 @@ export function getProgression(diffKey, score, level = 1) {
   }
 }
 
-export const APP_VERSION = '1.3.1';
-export const APP_CODENAME = 'Interactive Power-Ups Patch';
+export const APP_VERSION = '1.3.2';
+export const APP_CODENAME = 'Power Core Update';
 
 export const DIFFICULTIES = {
   easy: {

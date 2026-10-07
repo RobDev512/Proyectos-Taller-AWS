@@ -2,12 +2,12 @@
 
 Juego arcade con temática de AWS desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development.
 
-🎮 **Jugar ahora:**  
+🎮 **Jugar ahora:**
 https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
 ## Versión actual
 
-**v1.3.1 - Interactive Power-Ups Patch**
+**v1.3.2 - Power Core Update**
 
 ## Gameplay
 
@@ -21,16 +21,22 @@ El juego está diseñado alrededor de un control sencillo de una sola acción, p
 
 ## Power-Ups
 
-Desde el Level 2 algunas flechas pueden aparecer como Power-Up Arrows. Al anclarlas correctamente, el efecto se guarda en el **Power-Up Dock** en lugar de activarse automáticamente.
+Desde v1.3.2 los Power-Ups se ganan mediante **Power Charge + Power Core** en lugar de aparecer gratis en flechas especiales.
+
+- Los aciertos, Perfect Shots, combos y Level Complete llenan Power Charge.
+- Al llegar a 100 % aparece un Power Core orbitando alrededor del disco.
+- El Core cambia entre **FRZ**, **SHD**, **2X** y **CLR**.
+- Debes atravesar el Core con una flecha y luego anclar ese mismo tiro correctamente.
+- Si el tiro termina en colisión, el Core no se pierde y puedes intentarlo de nuevo.
+- La recompensa capturada entra al Power-Up Dock.
+- El Dock permite guardar hasta 2 unidades por tipo y activarlas con clic/tap o teclas `1–4`.
+
+Los efectos siguen siendo:
 
 - **FRZ — Freeze:** detiene temporalmente la rotación.
 - **SHD — Shield:** absorbe una colisión.
 - **2X — Double Score:** duplica los puntos de los siguientes 3 aciertos.
 - **CLR — Cleanup:** elimina la flecha anclada más antigua.
-
-Los Power-Ups se activan con clic/tap en su slot o con las teclas `1–4`. Cada tipo puede almacenar hasta 2 unidades.
-
-Además, los aciertos, Perfect Shots, combos y niveles completados alimentan **Power Charge**. Al llegar al 100 %, el juego concede un Power-Up adicional con espacio disponible.
 
 ## Características
 
@@ -120,6 +126,16 @@ Parche grande de interfaz y jugabilidad:
 - Permite guardar y activar Power-Ups manualmente.
 - Añade activación por clic/tap y teclas `1–4`.
 - Introduce Power Charge como sistema adicional de recompensas.
+
+### v1.3.2 - Power Core Update
+
+Reemplaza la adquisición pasiva por una recompensa de habilidad:
+
+- Power Charge por buen juego.
+- Power Core orbitante al alcanzar 100 %.
+- Captura mediante timing: atravesar el Core y anclar el tiro.
+- Tipo de Power-Up cambiante en tiempo real.
+- Integración completa con el Power-Up Dock de v1.3.1.
 
 ## GitHub Pages
 

@@ -7,9 +7,12 @@ import {
   createActivePowerUps,
   createPowerUpInventory,
 } from './powerups.js';
+import { createPowerCoreState } from './powercore.js';
 
 function randomIcon() {
-  return CONFIG.AWS_ICONS[Math.floor(Math.random() * CONFIG.AWS_ICONS.length)];
+  return CONFIG.AWS_ICONS[
+    Math.floor(Math.random() * CONFIG.AWS_ICONS.length)
+  ];
 }
 
 /**
@@ -33,7 +36,8 @@ function randomIcon() {
  * @property {{freezeTimer:number, shieldCharges:number, doubleScoreHits:number}} activePowerUps
  * @property {{freeze:number, shield:number, double:number, cleanup:number}} powerUpInventory
  * @property {number} powerUpCharge
- * @property {boolean} lastPreparedWasPowerUp
+ * @property {Object} powerCore
+ * @property {string|null} hoveredPowerUpSlot
  * @property {string} difficulty
  * @property {number} lastReverseScore
  */
@@ -80,6 +84,7 @@ export function createInitialState(
     activePowerUps: createActivePowerUps(),
     powerUpInventory: createPowerUpInventory(),
     powerUpCharge: 0,
+    powerCore: createPowerCoreState(),
     lastPreparedWasPowerUp: false,
 
     difficulty,

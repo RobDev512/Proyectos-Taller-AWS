@@ -1,10 +1,9 @@
 /**
- * powerups.js — Sistema interactivo de Power-Ups de AWS Arcade Game.
+ * powerups.js — Inventario y efectos de Power-Ups.
  *
- * v1.3.1 cambia el modelo de activación:
- * - Las Power-Up Arrows OTORGAN un Power-Up al inventario.
- * - El jugador decide cuándo usarlo mediante clic/tap o teclas 1–4.
- * - Power Charge ofrece una segunda vía de obtención basada en buen juego.
+ * Desde v1.3.2 los Power-Ups ya no llegan gratis mediante flechas especiales.
+ * El jugador llena Power Charge, captura un Power Core con un tiro válido y
+ * después decide cuándo activar la recompensa desde el Power-Up Dock.
  */
 
 export const POWER_UP_TYPES = Object.freeze({
@@ -23,19 +22,19 @@ export const POWER_UP_ORDER = Object.freeze([
 
 export const POWER_UP_CONFIG = Object.freeze({
   minLevel: 2,
-  spawnChance: 0.18,
 
   freezeDuration: 2.0,
   shieldMaxCharges: 1,
   doubleScoreHits: 3,
 
   inventoryMaxPerType: 2,
+
+  // Power Charge — v1.3.2
   chargeMax: 100,
-  chargePerHit: 10,
-  perfectChargeBonus: 18,
-  comboChargeStep: 5,
-  levelCompleteCharge: 15,
-  overflowConversionCharge: 25,
+  chargePerHit: 12,
+  perfectChargeBonus: 14,
+  comboChargeStep: 4,
+  levelCompleteCharge: 20,
 
   colors: Object.freeze({
     freeze: '#36C5F0',
@@ -92,6 +91,7 @@ export function isPowerUpType(type) {
 function sanitizeCount(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return 0;
+
   return Math.min(
     POWER_UP_CONFIG.inventoryMaxPerType,
     Math.max(0, Math.floor(n)),
@@ -112,7 +112,10 @@ export function sanitizePowerUpState(state) {
 
   state.activePowerUps = {
     freezeTimer:
-      Number.isFinite(freezeTimer) && freezeTimer > 0 ? freezeTimer : 0,
+      Number.isFinite(freezeTimer) && freezeTimer > 0
+        ? freezeTimer
+        : 0,
+
     shieldCharges:
       Number.isFinite(shieldCharges)
         ? Math.min(
@@ -120,6 +123,7 @@ export function sanitizePowerUpState(state) {
             Math.max(0, Math.floor(shieldCharges)),
           )
         : 0,
+
     doubleScoreHits:
       Number.isFinite(doubleScoreHits)
         ? Math.min(
@@ -140,21 +144,19 @@ export function sanitizePowerUpState(state) {
   }
 
   const charge = Number(state.powerUpCharge);
-  state.powerUpCharge =
-    Number.isFinite(charge)
-      ? Math.min(POWER_UP_CONFIG.chargeMax, Math.max(0, charge))
-      : 0;
+  state.powerUpCharge = Number.isFinite(charge)
+    ? Math.min(POWER_UP_CONFIG.chargeMax, Math.max(0, charge))
+    : 0;
 
-  state.nextPowerUp = isPowerUpType(state.nextPowerUp)
-    ? state.nextPowerUp
+  state.pendingPowerUpActivation = isPowerUpType(
+    state.pendingPowerUpActivation,
+  )
+    ? state.pendingPowerUpActivation
     : null;
 
-  state.pendingPowerUpActivation =
-    isPowerUpType(state.pendingPowerUpActivation)
-      ? state.pendingPowerUpActivation
-      : null;
-
-  state.lastPreparedWasPowerUp = Boolean(state.lastPreparedWasPowerUp);
+  // Compatibilidad con estados temporales de v1.3.0/v1.3.1.
+  state.nextPowerUp = null;
+  state.lastPreparedWasPowerUp = false;
 
   return state;
 }
@@ -172,9 +174,6 @@ export function resetPowerUps(state) {
   return state;
 }
 
-/**
- * Tipos que aún caben en el inventario.
- */
 export function getStorablePowerUps(state) {
   if (!state || typeof state !== 'object') return [];
 
@@ -191,107 +190,51 @@ export function getStorablePowerUps(state) {
 }
 
 /**
- * Compatibilidad con el nombre usado por v1.3.0.
- * Ahora la elegibilidad depende de espacio de inventario, porque la flecha
- * ya no activa el efecto automáticamente.
+ * Compatibilidad con código anterior. Ya no se generan Power-Up Arrows.
  */
 export function getEligiblePowerUps(state) {
   return getStorablePowerUps(state);
 }
 
 /**
- * Decide si la próxima flecha preparada será una Power-Up Arrow.
+ * v1.3.2: las flechas normales nunca llevan Power-Up automáticamente.
  */
-export function rollNextPowerUp(state, randomFn = Math.random) {
-  if (!state || typeof state !== 'object') return null;
-
-  const level = Number.isFinite(Number(state.level))
-    ? Math.max(1, Math.floor(Number(state.level)))
-    : 1;
-
-  if (level < POWER_UP_CONFIG.minLevel) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  if (state.lastPreparedWasPowerUp) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  const eligible = getStorablePowerUps(state);
-  if (eligible.length === 0) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  const rng = typeof randomFn === 'function' ? randomFn : Math.random;
-  const roll = Number(rng());
-
-  if (!Number.isFinite(roll) || roll >= POWER_UP_CONFIG.spawnChance) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  const selectionRoll = Number(rng());
-  const normalizedSelection = Number.isFinite(selectionRoll)
-    ? Math.min(Math.max(selectionRoll, 0), 0.9999999999999999)
-    : 0;
-
-  const index = Math.floor(normalizedSelection * eligible.length);
-  const selected = eligible[index] ?? null;
-
-  state.lastPreparedWasPowerUp = selected !== null;
-  return selected;
+export function rollNextPowerUp() {
+  return null;
 }
 
 /**
- * Intenta otorgar un Power-Up al inventario.
- * Si el tipo está lleno, lo convierte en Power Charge.
+ * Guarda una recompensa capturada en el inventario.
  */
-export function collectPowerUp(state, type, randomFn = Math.random) {
+export function collectPowerUp(state, type) {
   if (!state || !isPowerUpType(type)) {
     return {
       type: isPowerUpType(type) ? type : null,
       collected: false,
-      converted: false,
       count: 0,
-      chargeReward: null,
     };
   }
 
   sanitizePowerUpState(state);
 
   const current = state.powerUpInventory[type];
-  if (current < POWER_UP_CONFIG.inventoryMaxPerType) {
-    state.powerUpInventory[type] = current + 1;
+  if (current >= POWER_UP_CONFIG.inventoryMaxPerType) {
     return {
       type,
-      collected: true,
-      converted: false,
-      count: state.powerUpInventory[type],
-      chargeReward: null,
+      collected: false,
+      count: current,
     };
   }
 
-  const chargeResult = addPowerUpCharge(
-    state,
-    POWER_UP_CONFIG.overflowConversionCharge,
-    randomFn,
-  );
+  state.powerUpInventory[type] = current + 1;
 
   return {
     type,
-    collected: false,
-    converted: true,
-    count: current,
-    chargeReward: chargeResult.reward,
+    collected: true,
+    count: state.powerUpInventory[type],
   };
 }
 
-/**
- * Puede usarse un Power-Up almacenado ahora mismo.
- */
 export function canActivateStoredPowerUp(state, type) {
   if (!state || !isPowerUpType(type)) return false;
 
@@ -321,9 +264,6 @@ export function canActivateStoredPowerUp(state, type) {
   }
 }
 
-/**
- * Consume un Power-Up almacenado y activa su efecto.
- */
 export function activateStoredPowerUp(state, type) {
   if (!canActivateStoredPowerUp(state, type)) {
     return {
@@ -353,7 +293,9 @@ export function activateStoredPowerUp(state, type) {
       break;
 
     case POWER_UP_TYPES.CLEANUP: {
-      const removedProjectile = state.anchoredProjectiles.shift() ?? null;
+      const removedProjectile =
+        state.anchoredProjectiles.shift() ?? null;
+
       return {
         type,
         activated: removedProjectile !== null,
@@ -377,64 +319,32 @@ export function activateStoredPowerUp(state, type) {
 }
 
 /**
- * Entrega automáticamente una recompensa si Power Charge está lleno.
+ * Añade Power Charge. Llegar a 100 NO regala un Power-Up: únicamente deja
+ * el medidor listo para generar un Power Core desde powercore.js.
  */
-export function claimPowerUpChargeReward(state, randomFn = Math.random) {
-  if (!state || typeof state !== 'object') return null;
-  sanitizePowerUpState(state);
-
-  if (Number(state.level) < POWER_UP_CONFIG.minLevel) return null;
-  if (state.powerUpCharge < POWER_UP_CONFIG.chargeMax) return null;
-
-  const eligible = getStorablePowerUps(state);
-  if (eligible.length === 0) return null;
-
-  const rng = typeof randomFn === 'function' ? randomFn : Math.random;
-  const selectionRoll = Number(rng());
-  const normalizedSelection = Number.isFinite(selectionRoll)
-    ? Math.min(Math.max(selectionRoll, 0), 0.9999999999999999)
-    : 0;
-
-  const index = Math.floor(normalizedSelection * eligible.length);
-  const type = eligible[index] ?? eligible[0];
-
-  state.powerUpInventory[type] += 1;
-  state.powerUpCharge = Math.max(
-    0,
-    state.powerUpCharge - POWER_UP_CONFIG.chargeMax,
-  );
-
-  return {
-    type,
-    collected: true,
-    converted: false,
-    count: state.powerUpInventory[type],
-    source: 'charge',
-  };
-}
-
-/**
- * Añade progreso al medidor y, cuando corresponde, entrega recompensa.
- */
-export function addPowerUpCharge(state, amount, randomFn = Math.random) {
+export function addPowerUpCharge(state, amount) {
   if (!state || typeof state !== 'object') {
-    return { added: 0, reward: null };
+    return { before: 0, after: 0, added: 0, becameReady: false };
   }
 
   sanitizePowerUpState(state);
 
   const safeAmount = Math.max(0, Number(amount) || 0);
   const before = state.powerUpCharge;
-  state.powerUpCharge = Math.min(
+  const after = Math.min(
     POWER_UP_CONFIG.chargeMax,
     before + safeAmount,
   );
 
-  const reward = claimPowerUpChargeReward(state, randomFn);
+  state.powerUpCharge = after;
 
   return {
-    added: state.powerUpCharge - before + (reward ? POWER_UP_CONFIG.chargeMax : 0),
-    reward,
+    before,
+    after,
+    added: after - before,
+    becameReady:
+      before < POWER_UP_CONFIG.chargeMax &&
+      after >= POWER_UP_CONFIG.chargeMax,
   };
 }
 

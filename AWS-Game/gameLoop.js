@@ -22,6 +22,8 @@ import {
   playSoundLevelComplete,
   playSoundPowerUp,
   playSoundPowerUpCollect,
+  playSoundPowerCoreSpawn,
+  playSoundPowerCoreLock,
   playSoundShieldSave,
 } from './sound.js';
 import {
@@ -62,8 +64,6 @@ import {
 import {
   activateStoredPowerUp,
   addPowerUpCharge,
-  claimPowerUpChargeReward,
-  collectPowerUp,
   consumeDoubleScoreHit,
   consumeShield,
   isDoubleScoreActive,
@@ -73,6 +73,13 @@ import {
   resetPowerUps,
   updatePowerUps,
 } from './powerups.js';
+import {
+  checkPowerCoreCrossing,
+  completePowerCoreCapture,
+  resetPowerCore,
+  trySpawnPowerCore,
+  updatePowerCore,
+} from './powercore.js';
 
 let rafId = null;
 let overlayShown = false;
@@ -95,90 +102,6 @@ const USE_MESSAGES = Object.freeze({
   double: ['DOUBLE SCORE', 'NEXT 3 HITS'],
   cleanup: ['CLEANUP USED', 'OLDEST ARROW REMOVED'],
 });
-
-function recordPowerUpAcquisition(state) {
-  if (state.stats) recordPowerUp(state.stats);
-}
-
-function emitChargeRewardFeedback(state, reward) {
-  if (!reward?.type) return;
-
-  const type = reward.type;
-  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
-  const label = POWER_UP_CONFIG.names[type] ?? 'POWER-UP';
-  const shortcut = POWER_UP_CONFIG.shortcuts[type] ?? '?';
-
-  emitBanner(
-    'POWER REWARD!',
-    `${label} ADDED • CLICK SLOT OR PRESS ${shortcut}`,
-    { color, priority: 'high', duration: 1.35 },
-  );
-
-  emitImpact(
-    state.centralElement.x,
-    state.centralElement.y,
-    color,
-    22,
-    'confetti',
-  );
-
-  playSoundPowerUpCollect(type);
-  recordPowerUpAcquisition(state);
-}
-
-function emitCollectionFeedback(state, result, x, y) {
-  if (!result?.type) return;
-
-  const type = result.type;
-  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
-  const label = POWER_UP_CONFIG.names[type] ?? 'POWER-UP';
-  const shortcut = POWER_UP_CONFIG.shortcuts[type] ?? '?';
-
-  if (result.collected) {
-    emitBanner(
-      `${label} STORED`,
-      `CLICK SLOT OR PRESS ${shortcut}`,
-      { color, priority: 'high', duration: 1.15 },
-    );
-
-    emitFloatingText(x, y - 30, `${label} +1`, {
-      color,
-      size: 14,
-      duration: 0.78,
-      vy: -26,
-    });
-
-    emitRing(x, y, color, 1.0);
-    emitImpact(x, y, color, 18, 'burst');
-    playSoundPowerUpCollect(type);
-    recordPowerUpAcquisition(state);
-  } else if (result.converted) {
-    emitBanner(
-      `${label} CONVERTED`,
-      `INVENTORY FULL • +${POWER_UP_CONFIG.overflowConversionCharge}% CHARGE`,
-      { color, duration: 1.1 },
-    );
-
-    emitFloatingText(
-      x,
-      y - 30,
-      `+${POWER_UP_CONFIG.overflowConversionCharge}% POWER`,
-      {
-        color,
-        size: 13,
-        duration: 0.72,
-        vy: -24,
-      },
-    );
-
-    playSoundPowerUpCollect(type);
-    recordPowerUpAcquisition(state);
-  }
-
-  if (result.chargeReward) {
-    emitChargeRewardFeedback(state, result.chargeReward);
-  }
-}
 
 function emitActivationFeedback(state, activation) {
   if (!activation?.activated) return;
@@ -219,11 +142,6 @@ function emitActivationFeedback(state, activation) {
   emitRing(fxX, fxY, color, 1.15);
   emitImpact(fxX, fxY, color, 22, 'burst');
   playSoundPowerUp(type);
-
-  // Si el medidor estaba al 100 % pero el inventario estaba lleno,
-  // usar un Power-Up puede liberar el espacio necesario para cobrarlo.
-  const reward = claimPowerUpChargeReward(state);
-  if (reward) emitChargeRewardFeedback(state, reward);
 }
 
 function processPendingPowerUpActivation(state) {
@@ -238,6 +156,84 @@ function processPendingPowerUpActivation(state) {
   }
 }
 
+function emitPowerCoreSpawnFeedback(state, spawn) {
+  if (!spawn?.spawned) return;
+
+  const color =
+    POWER_UP_CONFIG.colors[spawn.type] ?? '#FF9900';
+
+  emitBanner(
+    'POWER CORE READY!',
+    'TIME YOUR SHOT • CROSS THE CORE AND LAND IT',
+    { color, priority: 'high', duration: 1.35 },
+  );
+
+  emitImpact(
+    state.centralElement.x,
+    state.centralElement.y,
+    color,
+    26,
+    'confetti',
+  );
+
+  playSoundPowerCoreSpawn();
+}
+
+function maybeSpawnPowerCore(state) {
+  const spawn = trySpawnPowerCore(state);
+  if (spawn.spawned) {
+    emitPowerCoreSpawnFeedback(state, spawn);
+  }
+  return spawn;
+}
+
+function emitPowerCoreLockFeedback(hit) {
+  if (!hit?.hit) return;
+
+  const color =
+    POWER_UP_CONFIG.colors[hit.type] ?? '#FFFFFF';
+  const label =
+    POWER_UP_CONFIG.names[hit.type] ?? 'POWER';
+
+  emitFloatingText(hit.x, hit.y - 20, `${label} LOCKED!`, {
+    color,
+    size: 14,
+    duration: 0.68,
+    vy: -22,
+  });
+  emitRing(hit.x, hit.y, color, 1.05);
+  emitImpact(hit.x, hit.y, color, 16, 'burst');
+  playSoundPowerCoreLock(hit.type);
+}
+
+function emitPowerCoreCaptureFeedback(state, capture, x, y) {
+  if (!capture?.captured) return;
+
+  const type = capture.type;
+  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+  const label = POWER_UP_CONFIG.names[type] ?? 'POWER-UP';
+  const shortcut = POWER_UP_CONFIG.shortcuts[type] ?? '?';
+
+  emitBanner(
+    `${label} CAPTURED!`,
+    `STORED • CLICK SLOT OR PRESS ${shortcut}`,
+    { color, priority: 'high', duration: 1.25 },
+  );
+
+  emitFloatingText(x, y - 30, `${label} +1`, {
+    color,
+    size: 15,
+    duration: 0.82,
+    vy: -27,
+  });
+
+  emitRing(x, y, color, 1.2);
+  emitImpact(x, y, color, 24, 'confetti');
+  playSoundPowerUpCollect(type);
+
+  if (state.stats) recordPowerUp(state.stats);
+}
+
 function awardChargeForHit(state, precision, comboMultiplier) {
   let amount = POWER_UP_CONFIG.chargePerHit;
 
@@ -247,13 +243,28 @@ function awardChargeForHit(state, precision, comboMultiplier) {
 
   if (comboMultiplier > 1) {
     amount +=
-      Math.min(15, comboMultiplier - 1) *
+      Math.min(4, comboMultiplier - 1) *
       POWER_UP_CONFIG.comboChargeStep;
   }
 
   const result = addPowerUpCharge(state, amount);
-  if (result.reward) {
-    emitChargeRewardFeedback(state, result.reward);
+
+  if (result.added > 0) {
+    emitFloatingText(
+      state.centralElement.x + state.centralElement.radius + 38,
+      state.centralElement.y + state.centralElement.radius + 34,
+      `+${Math.round(result.added)}% POWER`,
+      {
+        color: '#FFB24D',
+        size: 9,
+        duration: 0.48,
+        vy: -14,
+      },
+    );
+  }
+
+  if (result.becameReady) {
+    maybeSpawnPowerCore(state);
   }
 }
 
@@ -300,6 +311,11 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
     if (state.phase === 'playing') {
       processPendingPowerUpActivation(state);
 
+      // Si el inventario estaba lleno al llegar a 100 %, usar un Power-Up
+      // puede liberar un slot y permitir que el Core aparezca ahora.
+      maybeSpawnPowerCore(state);
+      updatePowerCore(state, deltaTime);
+
       if (
         state.pendingLaunch &&
         !state.flyingProjectile
@@ -325,12 +341,29 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
       }
 
       if (state.flyingProjectile) {
+        const previousX = state.flyingProjectile.x;
+        const previousY = state.flyingProjectile.y;
+
         advanceProjectile(state, deltaTime);
+
+        const coreHit = checkPowerCoreCrossing(
+          state,
+          state.flyingProjectile,
+          previousX,
+          previousY,
+        );
+
+        if (coreHit) {
+          emitPowerCoreLockFeedback(coreHit);
+        }
+
         const result = checkCollision(state);
 
         if (result === 'anchor') {
-          const powerUpType =
-            state.flyingProjectile?.powerUpType ?? null;
+          // El tipo queda bloqueado exactamente cuando la flecha atraviesa
+          // el Core. Aún debe anclarse para cobrar la recompensa.
+          const powerCoreHitType =
+            state.flyingProjectile?.powerCoreHitType ?? null;
 
           const scoreBefore = state.score;
 
@@ -436,20 +469,24 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             emitImpact(impactX, impactY, color, 14);
           }
 
-          // Power-Up Arrow => se guarda, NO se activa automáticamente.
-          if (powerUpType) {
-            const collection =
-              collectPowerUp(state, powerUpType);
-
-            emitCollectionFeedback(
+          // El Power Core se cobra únicamente después del anchor válido.
+          if (powerCoreHitType) {
+            const capture = completePowerCoreCapture(
               state,
-              collection,
-              impactX,
-              impactY,
+              powerCoreHitType,
             );
+
+            if (capture.captured) {
+              emitPowerCoreCaptureFeedback(
+                state,
+                capture,
+                impactX,
+                impactY,
+              );
+            }
           }
 
-          // Segunda vía de obtención: Power Charge por jugar bien.
+          // Jugar bien llena el siguiente Power Charge.
           awardChargeForHit(state, precision, mult);
 
           progression = getProgression(
@@ -486,17 +523,10 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             updateHighScore(state);
             resetCombo(state);
 
-            const chargeResult = addPowerUpCharge(
+            addPowerUpCharge(
               state,
               POWER_UP_CONFIG.levelCompleteCharge,
             );
-
-            if (chargeResult.reward) {
-              emitChargeRewardFeedback(
-                state,
-                chargeResult.reward,
-              );
-            }
 
             if (state.stats) {
               recordLevelComplete(
@@ -526,6 +556,8 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             state.centralElement.y;
 
           if (consumeShield(state)) {
+            // Aunque la flecha hubiera atravesado un Core, un tiro que termina
+            // en colisión NO lo cobra. El Core continúa orbitando.
             state.flyingProjectile = null;
             resetCombo(state);
 
@@ -583,6 +615,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             flashTimer = 0.25;
 
             resetPowerUps(state);
+            resetPowerCore(state);
 
             if (state.stats) recordGameOver(state.stats);
             playSoundGameOver();
@@ -591,6 +624,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
       }
 
     } else if (state.phase === 'levelcomplete') {
+      // Los efectos temporizados y el Core se pausan durante la transición.
       updateRotation(state, deltaTime, progression);
       state.levelTransitionTimer -= deltaTime;
 
@@ -605,11 +639,6 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         );
 
         state.lastTier = progression.tier;
-
-        const reward = claimPowerUpChargeReward(state);
-        if (reward) {
-          emitChargeRewardFeedback(state, reward);
-        }
 
         emitBanner(
           `LEVEL ${nextLevel}`,
