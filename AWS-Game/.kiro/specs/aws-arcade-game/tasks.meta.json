@@ -1,0 +1,309 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Estructura del proyecto y configuración base": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244287974
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244699248
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244760913
+      }
+    ],
+    "2.1 Implementar `state.js` con `createInitialState(highScore)` y el typedef `GameState`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244289709
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244295514
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244342354
+      }
+    ],
+    "2.2 Implementar `scoring.js` con `incrementScore(state)` y `captureHighScore(state)`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244289808
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244347789
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244430920
+      }
+    ],
+    "3.1 Implementar `centralElement.js` con el typedef `CentralElement` y la función `updateRotation(state, deltaTime)`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244289851
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244350014
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244433489
+      }
+    ],
+    "4.1 Implementar `projectile.js` con los typedefs `FlyingProjectile` y `AnchoredProjectile`, y las funciones `launchProjectile(state, config)`, `advanceProjectile(state, deltaTime)` y `anchorProjectile(state)`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244289917
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244352415
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244436071
+      }
+    ],
+    "5.1 Implementar `collision.js` con `checkCollision(state)` que retorna `'none'|'anchor'|'collision'`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244289982
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244441617
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244645372
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244689154
+      }
+    ],
+    "6. Checkpoint — Lógica de juego completa": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290021
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244768519
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245105514
+      }
+    ],
+    "7.1 Implementar `input.js` con `registerInputHandlers(canvas, state)`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290059
+      },
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244443882
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244647614
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244691544
+      }
+    ],
+    "8.1 Implementar `renderer.js` con `render(ctx, state, assets)`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290099
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245112985
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245191154
+      }
+    ],
+    "8.2 Implementar carga de assets en `main.js` — precargar imágenes SVG de los 8 iconos AWS como objetos `Image`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290174
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245196984
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245619902
+      }
+    ],
+    "9.1 Implementar `ui.js` con `updateHUD(scoreEl, highScoreEl, state)`, `showGameOver(overlayEl, state)` y `hideGameOver(overlayEl)`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290214
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245115675
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245193850
+      }
+    ],
+    "10.1 Implementar `gameLoop.js` con `startGameLoop(ctx, state, assets, config)`": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290263
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245200444
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245258239
+      }
+    ],
+    "10.2 Implementar `main.js` — punto de entrada que inicializa canvas, state, assets, registra handlers de input, conecta el botón \"Play Again\" al reinicio y arranca el game loop": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290305
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245562609
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245623162
+      }
+    ],
+    "11. Checkpoint final — Verificación integral": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244290341
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245626067
+      },
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245717390
+      }
+    ],
+    "2. Estado del juego y módulo de puntuación": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244431007
+      }
+    ],
+    "3. Elemento central y rotación": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244433576
+      }
+    ],
+    "4. Proyectil — vuelo y anclaje": [
+      {
+        "executionId": "6432d071-61e8-40ae-9cf5-13812696e4e4",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244436147
+      }
+    ],
+    "5. Detección de colisiones": [
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244689250
+      }
+    ],
+    "7. Entrada del jugador": [
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791244691616
+      }
+    ],
+    "9. UI — HUD y Game Over": [
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245193939
+      }
+    ],
+    "8. Renderer y assets": [
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245620004
+      }
+    ],
+    "10. Game Loop — integración principal": [
+      {
+        "executionId": "1f69a98f-c1b0-4fe9-b9b6-6fbd5c4085ad",
+        "chatSessionId": "sess_320e557b-8c7a-451f-b8c5-277639d6adca",
+        "timestamp": 1791245623258
+      }
+    ]
+  }
+}

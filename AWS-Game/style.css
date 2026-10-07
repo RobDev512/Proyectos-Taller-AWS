@@ -1,0 +1,162 @@
+/* ============================================================
+   style.css — AWS Arcade Game — Responsive limpio
+   ============================================================ */
+
+@font-face {
+  font-family: "Amazon Ember";
+  src: url("assets/fonts/AmazonEmber_Rg.woff2") format("woff2"),
+       url("assets/fonts/AmazonEmber_Rg.woff")  format("woff");
+  font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Amazon Ember";
+  src: url("assets/fonts/AmazonEmber_Bd.woff2") format("woff2"),
+       url("assets/fonts/AmazonEmber_Bd.woff")  format("woff");
+  font-weight: bold; font-style: normal; font-display: swap;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #0d1117;
+  overflow: hidden;
+  font-family: "Amazon Ember", Arial, sans-serif;
+}
+
+/* El wrapper ocupa exactamente el viewport y centra el canvas */
+#gameWrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0d1117;
+}
+
+/* El canvas se dimensiona por JS; sin bordes DOM */
+#gameCanvas {
+  display: block;
+  /* Sin border — el borde lo dibuja el renderer dentro del canvas */
+  touch-action: none;
+  cursor: default;
+}
+
+/* ── Overlays DOM (Game Over y Settings) — siguen al canvas vía JS ─────────── */
+/* Se posicionan sobre #gameWrapper con inset calculado en JS */
+#gameOverOverlay,
+#settingsOverlay {
+  display: none;
+  position: fixed;
+  background: rgba(35,47,62,.92);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+}
+#gameOverOverlay.visible,
+#settingsOverlay.visible { display: flex; }
+
+#gameOverCard,
+#settingsCard {
+  background: #1a2332;
+  border: 2px solid #FF9900;
+  border-radius: 10px;
+  padding: 36px 44px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.7);
+  color: #fff;
+  font-family: "Amazon Ember", Arial, sans-serif;
+}
+
+#gameOverTitle {
+  font-size: 34px; font-weight: bold;
+  color: #FF9900; text-transform: uppercase;
+}
+.gameover-scores { display: flex; gap: 40px; }
+.gameover-score-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.gameover-label { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #FF9900; opacity:.8; letter-spacing:.08em; }
+.gameover-value { font-size: 38px; font-weight: bold; }
+
+#playAgainBtn {
+  background: #FF9900; color: #232F3E;
+  border: none; border-radius: 4px;
+  padding: 12px 36px;
+  font-family: "Amazon Ember", Arial, sans-serif;
+  font-size: 16px; font-weight: bold;
+  cursor: pointer; transition: background .15s, transform .1s;
+}
+#playAgainBtn:hover  { background: #e68a00; }
+#playAgainBtn:active { transform: scale(.97); }
+
+/* Settings card */
+#settingsCard { min-width: 300px; max-height: 90vh; overflow-y: auto; }
+#settingsTitle { font-size: 20px; font-weight: bold; color: #FF9900; }
+.settings-section { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.settings-label { font-size: 11px; font-weight: bold; text-transform: uppercase;
+  letter-spacing:.1em; color: rgba(255,255,255,.5); }
+
+#difficultyPicker { display: flex; flex-direction: column; gap: 8px; }
+.diff-btn {
+  display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto;
+  column-gap: 10px; align-items: center;
+  background: rgba(255,255,255,.05);
+  border: 1.5px solid rgba(255,153,0,.25); border-radius: 8px;
+  padding: 10px 14px; cursor: pointer; text-align: left;
+  transition: background .15s, border-color .15s;
+  color: #fff; font-family: "Amazon Ember", Arial, sans-serif;
+}
+.diff-btn:hover    { background: rgba(255,153,0,.1); border-color: rgba(255,153,0,.6); }
+.diff-btn.selected { background: rgba(255,153,0,.18); border-color: #FF9900;
+  box-shadow: 0 0 0 2px rgba(255,153,0,.25); }
+.diff-emoji { grid-row: 1/3; font-size: 22px; justify-self: center; }
+.diff-name  { font-size: 14px; font-weight: bold; }
+.diff-desc  { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 1px; }
+
+.settings-toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+.settings-toggle-label { font-size: 14px; color: rgba(255,255,255,.85); }
+.toggle-btn {
+  position: relative; width: 44px; height: 24px;
+  background: rgba(255,255,255,.15); border: none; border-radius: 12px; cursor: pointer;
+  transition: background .2s;
+}
+.toggle-btn.on { background: #FF9900; }
+.toggle-btn::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; background: #fff; border-radius: 50%;
+  transition: transform .2s;
+}
+.toggle-btn.on::after { transform: translateX(20px); }
+
+.settings-actions { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+#settingsApplyBtn {
+  background: #FF9900; color: #232F3E; border: none; border-radius: 4px; padding: 11px;
+  font-family: "Amazon Ember", Arial, sans-serif; font-size: 15px; font-weight: bold;
+  cursor: pointer; transition: background .15s;
+}
+#settingsApplyBtn:hover { background: #e68a00; }
+.btn-secondary {
+  background: transparent; color: rgba(255,255,255,.6);
+  border: 1.5px solid rgba(255,255,255,.2); border-radius: 4px; padding: 10px;
+  font-family: "Amazon Ember", Arial, sans-serif; font-size: 14px; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.btn-secondary:hover { color: #fff; border-color: rgba(255,255,255,.5); }
+
+/* Ajustes para pantallas pequeñas: los modales nunca se salen del canvas. */
+#gameOverCard,
+#settingsCard {
+  max-width: calc(100% - 28px);
+}
+
+@media (max-width: 520px), (max-height: 700px) {
+  #gameOverCard,
+  #settingsCard {
+    padding: 22px 24px;
+    gap: 16px;
+  }
+
+  #gameOverTitle { font-size: 27px; }
+  .gameover-value { font-size: 31px; }
+  #settingsCard { min-width: min(300px, calc(100% - 28px)); }
+}

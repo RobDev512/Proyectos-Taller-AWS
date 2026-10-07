@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect width="80" height="80" rx="12" fill="#E8702E"/>
+  <!-- Lambda symbol -->
+  <path d="M16 62 L32 22 L40 40 L54 22 L66 22 L44 62 L34 62 L28 46 L22 62 Z"
+        fill="#FFFFFF" fill-rule="evenodd"/>
+  <!-- Cuadrado decorativo esquina inferior izquierda -->
+  <rect x="16" y="54" width="8" height="8" rx="1" fill="rgba(255,255,255,0.3)"/>
+</svg>

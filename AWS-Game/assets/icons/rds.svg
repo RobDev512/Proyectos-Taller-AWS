@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect width="80" height="80" rx="12" fill="#527FFF"/>
+  <!-- Stack de 3 cilindros para RDS -->
+  <!-- Cilindro inferior -->
+  <ellipse cx="40" cy="60" rx="20" ry="6" fill="#3A60CC"/>
+  <rect x="20" y="48" width="40" height="12" fill="#3D6AE0"/>
+  <ellipse cx="40" cy="48" rx="20" ry="6" fill="#5A8AFF"/>
+  <!-- Cilindro medio -->
+  <rect x="20" y="36" width="40" height="12" fill="#4575ED"/>
+  <ellipse cx="40" cy="36" rx="20" ry="6" fill="#6B9AFF"/>
+  <!-- Cilindro superior -->
+  <rect x="20" y="24" width="40" height="12" fill="#4D7CF5"/>
+  <ellipse cx="40" cy="24" rx="20" ry="6" fill="#7BA8FF"/>
+  <!-- Líneas separadoras -->
+  <line x1="20" y1="36" x2="60" y2="36" stroke="#FFFFFF" stroke-width="1" opacity="0.3"/>
+  <line x1="20" y1="48" x2="60" y2="48" stroke="#FFFFFF" stroke-width="1" opacity="0.3"/>
+  <!-- Texto RDS -->
+  <text x="40" y="43" font-family="Arial,sans-serif" font-size="11" font-weight="bold"
+        fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">RDS</text>
+</svg>

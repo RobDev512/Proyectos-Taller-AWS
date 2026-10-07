@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect width="80" height="80" rx="12" fill="#FF4F8B"/>
+  <!-- Cola de mensajes: tres rectángulos escalonados -->
+  <rect x="14" y="28" width="40" height="10" rx="5" fill="#FFFFFF" opacity="0.9"/>
+  <rect x="14" y="42" width="40" height="10" rx="5" fill="#FFFFFF" opacity="0.7"/>
+  <rect x="14" y="56" width="40" height="10" rx="5" fill="#FFFFFF" opacity="0.5"/>
+  <!-- Flecha derecha -->
+  <polygon points="56,28 68,40 56,52" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Texto SQS -->
+  <text x="34" y="19" font-family="Arial,sans-serif" font-size="13" font-weight="bold"
+        fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">SQS</text>
+</svg>

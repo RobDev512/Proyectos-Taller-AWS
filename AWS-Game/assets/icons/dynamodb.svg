@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect width="80" height="80" rx="12" fill="#4053D6"/>
+  <!-- Elipse superior (tapa) -->
+  <ellipse cx="40" cy="24" rx="20" ry="7" fill="#7B8FFF"/>
+  <!-- Cilindro: caras laterales -->
+  <rect x="20" y="24" width="40" height="32" fill="#5468E8"/>
+  <!-- Elipse media -->
+  <ellipse cx="40" cy="40" rx="20" ry="7" fill="#6B7FFF"/>
+  <!-- Elipse inferior -->
+  <ellipse cx="40" cy="56" rx="20" ry="7" fill="#4053D6"/>
+  <!-- Borde cilindro -->
+  <rect x="20" y="24" width="40" height="32" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.4"/>
+  <ellipse cx="40" cy="24" rx="20" ry="7" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.4"/>
+  <!-- Texto DB -->
+  <text x="40" y="43" font-family="Arial,sans-serif" font-size="13" font-weight="bold"
+        fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">DB</text>
+</svg>

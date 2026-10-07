@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect width="80" height="80" rx="12" fill="#E7157B"/>
+  <!-- Reloj / dial de CloudWatch -->
+  <circle cx="40" cy="42" r="24" fill="#FFFFFF" opacity="0.15"/>
+  <circle cx="40" cy="42" r="24" fill="none" stroke="#FFFFFF" stroke-width="2.5"/>
+  <!-- Marcas de hora (12, 3, 6, 9) -->
+  <line x1="40" y1="20" x2="40" y2="25" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <line x1="62" y1="42" x2="57" y2="42" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <line x1="40" y1="64" x2="40" y2="59" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <line x1="18" y1="42" x2="23" y2="42" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <!-- Manecilla hora -->
+  <line x1="40" y1="42" x2="40" y2="30" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Manecilla minutos -->
+  <line x1="40" y1="42" x2="52" y2="38" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <!-- Punto central -->
+  <circle cx="40" cy="42" r="3" fill="#FFFFFF"/>
+  <!-- Nube encima del reloj -->
+  <circle cx="34" cy="17" r="7" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="42" cy="14" r="8" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="50" cy="17" r="6" fill="#FFFFFF" opacity="0.9"/>
+  <rect x="27" y="17" width="30" height="8" fill="#FFFFFF" opacity="0.9"/>
+</svg>

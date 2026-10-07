@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect width="80" height="80" rx="12" fill="#569A31"/>
+  <!-- Cubo S3: cuerpo -->
+  <polygon points="40,14 64,26 64,54 40,66 16,54 16,26" fill="#3B6E21"/>
+  <!-- Tapa superior -->
+  <polygon points="40,14 64,26 40,38 16,26" fill="#7DC855"/>
+  <!-- Cara derecha -->
+  <polygon points="64,26 64,54 40,66 40,38" fill="#4A8A2A"/>
+  <!-- Texto S3 -->
+  <text x="40" y="46" font-family="Arial,sans-serif" font-size="16" font-weight="bold"
+        fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">S3</text>
+</svg>
