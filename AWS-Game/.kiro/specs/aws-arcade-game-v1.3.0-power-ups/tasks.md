@@ -89,63 +89,63 @@
   - [x] 10.5 Definir colores y labels FRZ / SHD / 2X / CLR
   - _Requirements: 2_
 
-- [ ] 11. Añadir Active Power-Up HUD
-  - [ ] 11.1 Implementar `drawPowerUpStatus`
-  - [ ] 11.2 Mostrar Freeze Timer
-  - [ ] 11.3 Mostrar Shield Charge
-  - [ ] 11.4 Mostrar Double Score hits restantes
-  - [ ] 11.5 Reposicionar Combo dinámicamente para evitar solapamiento
-  - [ ] 11.6 Verificar HUD en distintas resoluciones
+- [x] 11. Añadir Active Power-Up HUD
+  - [x] 11.1 Implementar `drawPowerUpStatus`
+  - [x] 11.2 Mostrar Freeze Timer
+  - [x] 11.3 Mostrar Shield Charge
+  - [x] 11.4 Mostrar Double Score hits restantes
+  - [x] 11.5 Reposicionar Combo dinámicamente para evitar solapamiento
+  - [x] 11.6 Verificar HUD en distintas resoluciones
   - _Requirements: 9_
 
-- [ ] 12. Añadir feedback y sonido
-  - [ ] 12.1 Feedback de Freeze
-  - [ ] 12.2 Feedback de Shield
-  - [ ] 12.3 Feedback de Shield Save
-  - [ ] 12.4 Feedback de Double Score
-  - [ ] 12.5 Feedback de Cleanup
-  - [ ] 12.6 Implementar `playSoundPowerUp(type)`
-  - [ ] 12.7 Implementar `playSoundShieldSave()`
+- [x] 12. Añadir feedback y sonido
+  - [x] 12.1 Feedback de Freeze
+  - [x] 12.2 Feedback de Shield
+  - [x] 12.3 Feedback de Shield Save
+  - [x] 12.4 Feedback de Double Score
+  - [x] 12.5 Feedback de Cleanup
+  - [x] 12.6 Implementar `playSoundPowerUp(type)`
+  - [x] 12.7 Implementar `playSoundShieldSave()`
   - _Requirements: 11_
 
-- [ ] 13. Ampliar estadísticas
-  - [ ] 13.1 Añadir `powerUpsCollected`
-  - [ ] 13.2 Añadir `shieldSaves`
-  - [ ] 13.3 Implementar `recordPowerUp`
-  - [ ] 13.4 Implementar `recordShieldSave`
-  - [ ] 13.5 Mostrar nuevas estadísticas en Settings
-  - [ ] 13.6 Comprobar migración desde estadísticas v1.2.1
+- [x] 13. Ampliar estadísticas
+  - [x] 13.1 Añadir `powerUpsCollected`
+  - [x] 13.2 Añadir `shieldSaves`
+  - [x] 13.3 Implementar `recordPowerUp`
+  - [x] 13.4 Implementar `recordShieldSave`
+  - [x] 13.5 Mostrar nuevas estadísticas en Settings
+  - [x] 13.6 Comprobar migración desde estadísticas v1.2.1
   - _Requirements: 10_
 
-- [ ] 14. Checkpoint funcional
-  - [ ] 14.1 Probar una partida sin Power-Ups en Level 1
-  - [ ] 14.2 Confirmar Power-Ups desde Level 2
-  - [ ] 14.3 Confirmar que no aparecen consecutivos
-  - [ ] 14.4 Confirmar que todos los Power-Ups activan correctamente
-  - [ ] 14.5 Confirmar que la hitbox sigue en `0.35`
-  - [ ] 14.6 Confirmar que Combo y Perfect Shots siguen funcionando
+- [x] 14. Checkpoint funcional
+  - [x] 14.1 Probar una partida sin Power-Ups en Level 1
+  - [x] 14.2 Confirmar Power-Ups desde Level 2
+  - [x] 14.3 Confirmar que no aparecen consecutivos
+  - [x] 14.4 Confirmar que todos los Power-Ups activan correctamente
+  - [x] 14.5 Confirmar que la hitbox sigue en `0.35`
+  - [x] 14.6 Confirmar que Combo y Perfect Shots siguen funcionando
 
-- [ ] 15. Versionado v1.3.0
-  - [ ] 15.1 Cambiar `APP_VERSION` a `1.3.0`
-  - [ ] 15.2 Cambiar `APP_CODENAME` a `Power-Ups Update`
-  - [ ] 15.3 Actualizar `CHANGELOG.md`
-  - [ ] 15.4 Actualizar `RELEASE_NOTES.md`
-  - [ ] 15.5 Actualizar `AWS-Game/README.md`
-  - [ ] 15.6 Actualizar root `README.md`
-  - [ ] 15.7 Actualizar `site/index.html`
+- [x] 15. Versionado v1.3.0
+  - [x] 15.1 Cambiar `APP_VERSION` a `1.3.0`
+  - [x] 15.2 Cambiar `APP_CODENAME` a `Power-Ups Update`
+  - [x] 15.3 Actualizar `CHANGELOG.md`
+  - [x] 15.4 Actualizar `RELEASE_NOTES.md`
+  - [x] 15.5 Actualizar `AWS-Game/README.md`
+  - [x] 15.6 Actualizar root `README.md`
+  - [x] 15.7 Actualizar `site/index.html`
   - _Requirements: 14_
 
-- [ ] 16. Validación final
-  - [ ] 16.1 Ejecutar `git diff --check`
-  - [ ] 16.2 Probar localmente con servidor HTTP
-  - [ ] 16.3 Probar Easy / Medium / Hard
-  - [ ] 16.4 Probar varios niveles
-  - [ ] 16.5 Probar Game Over con y sin Shield
-  - [ ] 16.6 Probar transición de nivel con Freeze activo
-  - [ ] 16.7 Probar Double Score con Perfect + Combo
-  - [ ] 16.8 Confirmar persistencia de estadísticas
-  - [ ] 16.9 Confirmar responsive
-  - [ ] 16.10 Confirmar cero errores 404 o excepciones en consola
+- [x] 16. Validación final
+  - [x] 16.1 Ejecutar `git diff --check`
+  - [x] 16.2 Probar localmente con servidor HTTP
+  - [x] 16.3 Probar Easy / Medium / Hard
+  - [x] 16.4 Probar varios niveles
+  - [x] 16.5 Probar Game Over con y sin Shield
+  - [x] 16.6 Probar transición de nivel con Freeze activo
+  - [x] 16.7 Probar Double Score con Perfect + Combo
+  - [x] 16.8 Confirmar persistencia de estadísticas
+  - [x] 16.9 Confirmar responsive
+  - [x] 16.10 Confirmar cero errores 404 o excepciones en consola
 
 - [ ] 17. Release
   - [ ] 17.1 Commit de v1.3.0

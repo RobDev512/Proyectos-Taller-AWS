@@ -6,6 +6,12 @@ const texts = [];
 const rings = [];
 const banners = [];
 
+let decorativeEnabled = true;
+
+export function setFeedbackFxEnabled(val) {
+  decorativeEnabled = Boolean(val);
+}
+
 export function emitFloatingText(x, y, text, options = {}) {
   texts.push({
     x, y,
@@ -19,6 +25,7 @@ export function emitFloatingText(x, y, text, options = {}) {
 }
 
 export function emitRing(x, y, color = '#FF9900', strength = 1) {
+  if (!decorativeEnabled) return;
   rings.push({ x, y, color, strength, life: 1, maxLife: 0.32 });
 }
 
@@ -81,7 +88,7 @@ export function updateAndDrawFeedback(ctx, dt) {
       ctx.font = 'bold 28px "Amazon Ember", Arial, sans-serif';
       ctx.fillStyle = '#FF9900';
       ctx.shadowColor = '#FF9900';
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = decorativeEnabled ? 12 : 0;
       ctx.fillText(banner.title, ctx.canvas.width / 2, y);
       ctx.shadowBlur = 0;
       if (banner.subtitle) {

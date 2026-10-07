@@ -16,6 +16,8 @@ import {
   playSoundPerfect,
   playSoundTierUp,
   playSoundLevelComplete,
+  playSoundPowerUp,
+  playSoundShieldSave,
 } from './sound.js';
 import { emitImpact, updateAndDraw, clearParticles } from './particles.js';
 import { registerAnchor, resetCombo } from './combo.js';
@@ -34,6 +36,8 @@ import {
   recordCombo,
   recordGameOver,
   recordLevelComplete,
+  recordPowerUp,
+  recordShieldSave,
 } from './stats.js';
 import {
   ensureLevelState,
@@ -51,6 +55,7 @@ import {
   isFreezeActive,
   POWER_UP_CONFIG,
   POWER_UP_TYPES,
+  resetPowerUps,
   updatePowerUps,
 } from './powerups.js';
 
@@ -62,7 +67,51 @@ const SERVICE_COLORS = {
   sqs:'#FF4F8B', sns:'#E7157B', rds:'#527FFF', cloudwatch:'#E7157B',
 };
 
+
 let flashTimer = 0;
+
+const POWER_UP_MESSAGES = Object.freeze({
+  freeze: {
+    title: 'FREEZE!',
+    subtitle: 'ROTATION PAUSED',
+  },
+  shield: {
+    title: 'SHIELD READY!',
+    subtitle: 'ONE COLLISION BLOCKED',
+  },
+  double: {
+    title: 'DOUBLE SCORE!',
+    subtitle: 'NEXT 3 HITS',
+  },
+  cleanup: {
+    title: 'CLEANUP!',
+    subtitle: 'OLDEST ARROW REMOVED',
+  },
+});
+
+function emitPowerUpActivationFeedback(state, activation, x, y) {
+  if (!activation?.activated) return;
+
+  const type = activation.type;
+  const message = POWER_UP_MESSAGES[type];
+  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+
+  if (message) {
+    emitBanner(message.title, message.subtitle);
+  }
+
+  emitFloatingText(x, y - 34, POWER_UP_CONFIG.labels[type] ?? 'POWER-UP', {
+    color,
+    size: 14,
+    duration: 0.75,
+    vy: -28,
+  });
+  emitRing(x, y, color, 1.05);
+  emitImpact(x, y, color, 20, 'burst');
+
+  playSoundPowerUp(type);
+  if (state.stats) recordPowerUp(state.stats);
+}
 
 export function startGameLoop(ctx, state, assets, config, overlayEl) {
   stopGameLoop();
@@ -180,6 +229,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
           // Activar el Power-Up únicamente después de resolver todos los
           // puntos del tiro. Así una Double Arrow no se duplica a sí misma.
           const activation = activatePowerUp(state, powerUpType);
+          emitPowerUpActivationFeedback(state, activation, impactX, impactY);
 
           if (
             activation.activated &&
@@ -191,7 +241,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             const removedY = ce.y + removed.distance * Math.sin(removed.angle);
             const cleanupColor = POWER_UP_CONFIG.colors.cleanup;
 
-            emitFloatingText(removedX, removedY - 12, 'CLEANUP!', {
+            emitFloatingText(removedX, removedY - 12, 'REMOVED', {
               color: cleanupColor,
               size: 15,
               duration: 0.72,
@@ -225,14 +275,36 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         } else if (result === 'collision') {
           // Shield intercepta el resultado después de checkCollision().
           // collision.js y su hitbox permanecen completamente intactos.
+          const shieldX = state.flyingProjectile?.x ?? state.centralElement.x;
+          const shieldY = state.flyingProjectile?.y ?? state.centralElement.y;
+
           if (consumeShield(state)) {
             state.flyingProjectile = null;
             resetCombo(state);
+
+            const shieldColor = POWER_UP_CONFIG.colors.shield;
+            emitBanner('SHIELD SAVE!', 'COLLISION BLOCKED');
+            emitFloatingText(shieldX, shieldY - 18, 'SHIELD SAVE!', {
+              color: shieldColor,
+              size: 17,
+              duration: 0.9,
+              vy: -30,
+            });
+            emitRing(shieldX, shieldY, shieldColor, 1.25);
+            emitImpact(shieldX, shieldY, shieldColor, 26, 'burst');
+            playSoundShieldSave();
+
+            if (state.stats) recordShieldSave(state.stats);
           } else {
             state.phase = 'gameover';
             state.gameOverTimestamp = performance.now();
             overlayShown = false;
             flashTimer = 0.25;
+
+            // Game Over elimina todos los efectos y cualquier Power-Up
+            // preparado. Las estadísticas y el score permanecen intactos.
+            resetPowerUps(state);
+
             if (state.stats) recordGameOver(state.stats);
             playSoundGameOver();
           }

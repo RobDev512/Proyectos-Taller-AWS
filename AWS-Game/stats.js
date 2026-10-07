@@ -13,6 +13,8 @@ function defaults() {
     bestCombo: 1,
     levelsCompleted: 0,
     bestLevel: 1,
+    powerUpsCollected: 0,
+    shieldSaves: 0,
   };
 }
 
@@ -78,6 +80,16 @@ export function recordLevelComplete(stats, completedLevel) {
 
 export function recordGameOver(stats) {
   stats.gamesPlayed += 1;
+  saveStats(stats);
+}
+
+export function recordPowerUp(stats) {
+  stats.powerUpsCollected = (stats.powerUpsCollected ?? 0) + 1;
+  saveStats(stats);
+}
+
+export function recordShieldSave(stats) {
+  stats.shieldSaves = (stats.shieldSaves ?? 0) + 1;
   saveStats(stats);
 }
 

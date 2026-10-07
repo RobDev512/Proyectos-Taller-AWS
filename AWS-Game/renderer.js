@@ -409,15 +409,88 @@ function drawLevelProgress(ctx, state, canvasW) {
   ctx.restore();
 }
 
-function drawComboBadge(ctx, state, canvasW) {
+function getActivePowerUpBadges(state) {
+  const active = state.activePowerUps ?? {};
+  const badges = [];
+
+  const freezeTimer = Number(active.freezeTimer);
+  if (Number.isFinite(freezeTimer) && freezeTimer > 0) {
+    badges.push({
+      type: 'freeze',
+      text: `FRZ ${freezeTimer.toFixed(1)}s`,
+    });
+  }
+
+  const shieldCharges = Math.max(0, Math.floor(Number(active.shieldCharges) || 0));
+  if (shieldCharges > 0) {
+    badges.push({
+      type: 'shield',
+      text: `SHD ×${shieldCharges}`,
+    });
+  }
+
+  const doubleHits = Math.max(0, Math.floor(Number(active.doubleScoreHits) || 0));
+  if (doubleHits > 0) {
+    badges.push({
+      type: 'double',
+      text: `2X ×${doubleHits}`,
+    });
+  }
+
+  return badges;
+}
+
+function drawPowerUpStatus(ctx, state, canvasW) {
+  if (state.phase !== 'playing') return false;
+
+  const badges = getActivePowerUpBadges(state);
+  if (badges.length === 0) return false;
+
+  const gap = 7;
+  const h = 22;
+
+  ctx.save();
+  ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
+
+  const widths = badges.map(({ text }) => Math.ceil(ctx.measureText(text).width) + 18);
+  const totalW = widths.reduce((sum, w) => sum + w, 0) + gap * (badges.length - 1);
+  let x = canvasW / 2 - totalW / 2;
+  const y = 145;
+
+  badges.forEach((badge, index) => {
+    const w = widths[index];
+    const color = POWER_UP_CONFIG.colors[badge.type] ?? '#FFFFFF';
+
+    roundedRectPath(ctx, x, y, w, h, h / 2);
+    ctx.fillStyle = 'rgba(13,17,23,.78)';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(badge.text, x + w / 2, y + h / 2 + 0.5);
+
+    x += w + gap;
+  });
+
+  ctx.restore();
+  return true;
+}
+
+function drawComboBadge(ctx, state, canvasW, hasPowerUpStatus = false) {
   const combo = state.comboLevel ?? 1;
   if (combo <= 1 || state.phase !== 'playing') return;
 
   const text = `COMBO ×${combo}`;
+  const y = hasPowerUpStatus ? 174 : 145;
+
   ctx.save();
   ctx.font = 'bold 12px "Amazon Ember", Arial, sans-serif';
   const tw = ctx.measureText(text).width;
-  roundedRectPath(ctx, canvasW / 2 - tw / 2 - 12, 145, tw + 24, 27, 14);
+  roundedRectPath(ctx, canvasW / 2 - tw / 2 - 12, y, tw + 24, 27, 14);
   ctx.fillStyle = 'rgba(255,153,0,.16)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(255,153,0,.55)';
@@ -426,7 +499,7 @@ function drawComboBadge(ctx, state, canvasW) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#FFB24D';
-  ctx.fillText(text, canvasW / 2, 158.5);
+  ctx.fillText(text, canvasW / 2, y + 13.5);
   ctx.restore();
 }
 
@@ -625,7 +698,8 @@ export function render(ctx, state, assets, progression = null) {
   }
 
   drawLevelProgress(ctx, state, canvas.width);
-  drawComboBadge(ctx, state, canvas.width);
+  const hasPowerUpStatus = drawPowerUpStatus(ctx, state, canvas.width);
+  drawComboBadge(ctx, state, canvas.width, hasPowerUpStatus);
 
   // Disco
   drawDisc(ctx, ce, progression, state.level);

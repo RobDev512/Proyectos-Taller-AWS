@@ -92,3 +92,43 @@ export function playSoundLevelComplete() {
   beep({ type: 'triangle', freq: 784, duration: 0.16, gain: 0.19, delay: 0.20 });
   beep({ type: 'sine', freq: 1047, duration: 0.24, gain: 0.16, delay: 0.31 });
 }
+
+/**
+ * Sonido de activación para cada Power-Up.
+ *
+ * @param {'freeze'|'shield'|'double'|'cleanup'} type
+ */
+export function playSoundPowerUp(type) {
+  switch (type) {
+    case 'freeze':
+      beep({ type: 'sine', freq: 920, freq2: 420, duration: 0.22, gain: 0.18 });
+      beep({ type: 'triangle', freq: 620, freq2: 310, duration: 0.28, gain: 0.12, delay: 0.05 });
+      break;
+
+    case 'shield':
+      beep({ type: 'sine', freq: 520, freq2: 760, duration: 0.16, gain: 0.18 });
+      beep({ type: 'sine', freq: 760, freq2: 1040, duration: 0.18, gain: 0.13, delay: 0.08 });
+      break;
+
+    case 'double':
+      beep({ type: 'triangle', freq: 660, duration: 0.10, gain: 0.18 });
+      beep({ type: 'triangle', freq: 880, duration: 0.12, gain: 0.16, delay: 0.07 });
+      beep({ type: 'sine', freq: 1320, duration: 0.15, gain: 0.12, delay: 0.14 });
+      break;
+
+    case 'cleanup':
+      beep({ type: 'square', freq: 420, freq2: 180, duration: 0.11, gain: 0.12 });
+      beep({ type: 'triangle', freq: 520, freq2: 780, duration: 0.16, gain: 0.12, delay: 0.06 });
+      break;
+
+    default:
+      break;
+  }
+}
+
+/** Confirmación especial cuando Shield absorbe una colisión. */
+export function playSoundShieldSave() {
+  beep({ type: 'square', freq: 180, freq2: 90, duration: 0.09, gain: 0.16 });
+  beep({ type: 'sine', freq: 740, freq2: 1120, duration: 0.22, gain: 0.18, delay: 0.03 });
+  beep({ type: 'sine', freq: 1120, duration: 0.14, gain: 0.10, delay: 0.14 });
+}

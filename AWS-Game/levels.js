@@ -76,8 +76,8 @@ export function beginLevelComplete(state) {
 }
 
 /**
- * Prepara el siguiente nivel manteniendo score/record/estadísticas.
- * Las flechas del nivel anterior desaparecen para crear una nueva fase limpia.
+ * Prepara el siguiente nivel manteniendo score/record/estadísticas y también
+ * los Active Power-Ups. Las flechas del nivel anterior desaparecen.
  */
 export function advanceToNextLevel(state) {
   ensureLevelState(state);
@@ -90,6 +90,12 @@ export function advanceToNextLevel(state) {
   state.flyingProjectile = null;
   state.pendingLaunch = false;
   state.lastReverseScore = state.score;
+
+  // La flecha preparada se reinicia al cambiar de nivel para no arrastrar,
+  // por ejemplo, un Cleanup que dejó de ser útil al vaciar el disco.
+  // Los efectos activos (Freeze, Shield y Double Score) sí se conservan.
+  state.nextPowerUp = null;
+  state.lastPreparedWasPowerUp = false;
 
   const diff = DIFFICULTIES[state.difficulty] ?? DIFFICULTIES.medium;
   const ce = state.centralElement;
