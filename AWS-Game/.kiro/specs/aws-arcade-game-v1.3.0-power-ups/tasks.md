@@ -63,30 +63,30 @@
   - [x] 7.6 Evitar que la flecha que lo activa se beneficie a sí misma
   - _Requirements: 6, 8_
 
-- [ ] 8. Implementar Cleanup
-  - [ ] 8.1 Validar elegibilidad
-  - [ ] 8.2 Eliminar el Anchored Projectile más antiguo
-  - [ ] 8.3 Nunca eliminar la propia Power-Up Arrow
-  - [ ] 8.4 Mantener Score y Level Hits
-  - [ ] 8.5 Emitir feedback en la posición eliminada
+- [x] 8. Implementar Cleanup
+  - [x] 8.1 Validar elegibilidad
+  - [x] 8.2 Eliminar el Anchored Projectile más antiguo
+  - [x] 8.3 Nunca eliminar la propia Power-Up Arrow
+  - [x] 8.4 Mantener Score y Level Hits
+  - [x] 8.5 Emitir feedback en la posición eliminada
   - _Requirements: 7_
 
-- [ ] 9. Integrar Power-Ups con Game Loop
-  - [ ] 9.1 Capturar `powerUpType` antes de anclar
-  - [ ] 9.2 Mantener orden correcto de scoring
-  - [ ] 9.3 Aplicar Double Score antes de activar el Power-Up actual
-  - [ ] 9.4 Activar Power-Up después del score del tiro
-  - [ ] 9.5 Mantener Tier progression
-  - [ ] 9.6 Mantener Level Complete Bonus separado
-  - [ ] 9.7 Manejar Shield Save sin Game Over
+- [x] 9. Integrar Power-Ups con Game Loop
+  - [x] 9.1 Capturar `powerUpType` antes de anclar
+  - [x] 9.2 Mantener orden correcto de scoring
+  - [x] 9.3 Aplicar Double Score antes de activar el Power-Up actual
+  - [x] 9.4 Activar Power-Up después del score del tiro
+  - [x] 9.5 Mantener Tier progression
+  - [x] 9.6 Mantener Level Complete Bonus separado
+  - [x] 9.7 Manejar Shield Save sin Game Over
   - _Requirements: 3, 5, 6, 8_
 
-- [ ] 10. Añadir visuales de Power-Up Arrow
-  - [ ] 10.1 Implementar `drawPowerUpMarker`
-  - [ ] 10.2 Mostrar marker en Ready Arrow
-  - [ ] 10.3 Mostrar marker en Flying Projectile
-  - [ ] 10.4 Conservar icono AWS
-  - [ ] 10.5 Definir colores y labels FRZ / SHD / 2X / CLR
+- [x] 10. Añadir visuales de Power-Up Arrow
+  - [x] 10.1 Implementar `drawPowerUpMarker`
+  - [x] 10.2 Mostrar marker en Ready Arrow
+  - [x] 10.3 Mostrar marker en Flying Projectile
+  - [x] 10.4 Conservar icono AWS
+  - [x] 10.5 Definir colores y labels FRZ / SHD / 2X / CLR
   - _Requirements: 2_
 
 - [ ] 11. Añadir Active Power-Up HUD

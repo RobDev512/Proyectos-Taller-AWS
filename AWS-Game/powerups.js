@@ -256,10 +256,11 @@ export function isFreezeActive(state) {
 }
 
 /**
- * Activa uno de los Power-Ups persistentes implementados hasta ahora.
+ * Activa un Power-Up.
  *
- * Cleanup se implementará en su propia tarea porque necesita eliminar
- * un Anchored Projectile y devolver su posición para feedback.
+ * Cleanup elimina el Anchored Projectile más antiguo, pero únicamente
+ * cuando la Power-Up Arrow recién anclada tiene al menos dos proyectiles
+ * anteriores disponibles. La propia Cleanup Arrow permanece anclada.
  *
  * @param {Object} state
  * @param {string|null} type
@@ -296,6 +297,30 @@ export function activatePowerUp(state, type) {
       state.activePowerUps.doubleScoreHits =
         POWER_UP_CONFIG.doubleScoreHits;
       break;
+
+    case POWER_UP_TYPES.CLEANUP: {
+      const anchored = Array.isArray(state.anchoredProjectiles)
+        ? state.anchoredProjectiles
+        : [];
+
+      // La Cleanup Arrow ya está al final del array. Para respetar la
+      // elegibilidad original deben existir al menos dos flechas previas.
+      if (anchored.length < 3) {
+        return {
+          type,
+          activated: false,
+          removedProjectile: null,
+        };
+      }
+
+      const removedProjectile = anchored.shift();
+
+      return {
+        type,
+        activated: true,
+        removedProjectile,
+      };
+    }
 
     default:
       return {

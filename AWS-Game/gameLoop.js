@@ -44,10 +44,13 @@ import {
   advanceToNextLevel,
 } from './levels.js';
 import {
+  activatePowerUp,
   consumeDoubleScoreHit,
   consumeShield,
   isDoubleScoreActive,
   isFreezeActive,
+  POWER_UP_CONFIG,
+  POWER_UP_TYPES,
   updatePowerUps,
 } from './powerups.js';
 
@@ -111,7 +114,10 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         const result = checkCollision(state);
 
         if (result === 'anchor') {
+          // Capturar antes de anclar: anchorProjectile() limpia flyingProjectile.
+          const powerUpType = state.flyingProjectile?.powerUpType ?? null;
           const scoreBefore = state.score;
+
           anchorProjectile(state); // +1 base
           registerLevelHit(state);
 
@@ -169,6 +175,30 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             });
             emitRing(impactX, impactY, color, 0.8);
             emitImpact(impactX, impactY, color, 14);
+          }
+
+          // Activar el Power-Up únicamente después de resolver todos los
+          // puntos del tiro. Así una Double Arrow no se duplica a sí misma.
+          const activation = activatePowerUp(state, powerUpType);
+
+          if (
+            activation.activated &&
+            activation.type === POWER_UP_TYPES.CLEANUP &&
+            activation.removedProjectile
+          ) {
+            const removed = activation.removedProjectile;
+            const removedX = ce.x + removed.distance * Math.cos(removed.angle);
+            const removedY = ce.y + removed.distance * Math.sin(removed.angle);
+            const cleanupColor = POWER_UP_CONFIG.colors.cleanup;
+
+            emitFloatingText(removedX, removedY - 12, 'CLEANUP!', {
+              color: cleanupColor,
+              size: 15,
+              duration: 0.72,
+              vy: -24,
+            });
+            emitRing(removedX, removedY, cleanupColor, 1.0);
+            emitImpact(removedX, removedY, cleanupColor, 18, 'burst');
           }
 
           // Recalcular inmediatamente porque el tiro pudo sumar varios puntos.

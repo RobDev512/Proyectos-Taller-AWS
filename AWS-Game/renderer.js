@@ -1,5 +1,6 @@
 import { APP_VERSION, APP_CODENAME } from './config.js';
 import { getLevelTarget, getLevelTheme, LEVEL_COMPLETE_DELAY } from './levels.js';
+import { POWER_UP_CONFIG, isPowerUpType } from './powerups.js';
 
 /**
  * renderer.js — AWS Arcade Game
@@ -193,6 +194,41 @@ function drawArrow(ctx, cx, cy, radius, angle, awsIconId, assets) {
     ctx.textBaseline = 'middle';
     ctx.fillText(label, 0, iconY);
   }
+
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Power-Up marker — badge visual adicional; no altera dimensiones ni hitbox.
+// ---------------------------------------------------------------------------
+function drawPowerUpMarker(ctx, x, y, radius, type) {
+  if (!isPowerUpType(type)) return;
+
+  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+  const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
+  const badgeR = Math.max(9, radius * 0.52);
+  const bx = x + radius * 0.92;
+  const by = y - radius * 1.18;
+
+  ctx.save();
+
+  ctx.beginPath();
+  ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 9;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = 'rgba(255,255,255,.86)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold ${Math.max(7, Math.floor(badgeR * 0.78))}px "Amazon Ember", Arial, sans-serif`;
+  ctx.fillStyle = '#0E1824';
+  ctx.fillText(label, bx, by + 0.5);
 
   ctx.restore();
 }
@@ -513,7 +549,10 @@ function drawReadyArrow(ctx, state, assets, canvasW, canvasH) {
   ctx.globalAlpha = 0.82 + 0.18 * Math.sin(t * Math.PI * 0.8);
   drawArrow(ctx, cx, floatY, r, 0, state.nextArrowId, assets);
   ctx.globalAlpha = 1;
+
+  drawPowerUpMarker(ctx, cx, floatY, r, state.nextPowerUp);
 }
+
 function drawLevelCompleteOverlay(ctx, state) {
   if (state.phase !== 'levelcomplete') return;
 
@@ -611,6 +650,7 @@ export function render(ctx, state, assets, progression = null) {
     const fp = flyingProjectile;
     const flyAngle = Math.atan2(fp.vy, fp.vx) + Math.PI / 2;
     drawArrow(ctx, fp.x, fp.y, fp.radius, flyAngle, fp.awsIconId, assets);
+    drawPowerUpMarker(ctx, fp.x, fp.y, fp.radius, fp.powerUpType);
   }
 
   // Flecha en espera (visible antes de lanzar)
