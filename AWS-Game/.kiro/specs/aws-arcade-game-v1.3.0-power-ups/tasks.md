@@ -20,13 +20,13 @@
   - [x] 2.6 Garantizar reset correcto al iniciar nueva partida
   - _Requirements: 1, 12_
 
-- [ ] 3. Implementar generación de Power-Ups
-  - [ ] 3.1 Implementar `getEligiblePowerUps(state)`
-  - [ ] 3.2 Implementar probabilidad base del 16 %
-  - [ ] 3.3 Deshabilitar Power-Ups durante Level 1
-  - [ ] 3.4 Evitar dos Power-Up Arrows consecutivas
-  - [ ] 3.5 Excluir Shield, Freeze o Double si ya están activos
-  - [ ] 3.6 Excluir Cleanup si no existen suficientes Anchored Projectiles
+- [x] 3. Implementar generación de Power-Ups
+  - [x] 3.1 Implementar `getEligiblePowerUps(state)`
+  - [x] 3.2 Implementar probabilidad base del 16 %
+  - [x] 3.3 Deshabilitar Power-Ups durante Level 1
+  - [x] 3.4 Evitar dos Power-Up Arrows consecutivas
+  - [x] 3.5 Excluir Shield, Freeze o Double si ya están activos
+  - [x] 3.6 Excluir Cleanup si no existen suficientes Anchored Projectiles
   - _Requirements: 1_
 
 - [ ] 4. Integrar Power-Ups con Projectile
