@@ -84,3 +84,11 @@ export function playSoundTierUp() {
   beep({ type: 'triangle', freq: 659, duration: 0.14, gain: 0.18, delay: 0.08 });
   beep({ type: 'triangle', freq: 784, duration: 0.18, gain: 0.16, delay: 0.16 });
 }
+
+/** Fanfarria breve al completar un nivel. */
+export function playSoundLevelComplete() {
+  beep({ type: 'triangle', freq: 523, duration: 0.14, gain: 0.22 });
+  beep({ type: 'triangle', freq: 659, duration: 0.14, gain: 0.20, delay: 0.10 });
+  beep({ type: 'triangle', freq: 784, duration: 0.16, gain: 0.19, delay: 0.20 });
+  beep({ type: 'sine', freq: 1047, duration: 0.24, gain: 0.16, delay: 0.31 });
+}

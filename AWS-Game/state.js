@@ -10,25 +10,35 @@ function randomIcon() {
 
 /**
  * @typedef {Object} GameState
- * @property {'idle'|'playing'|'gameover'} phase
+ * @property {'idle'|'playing'|'levelcomplete'|'gameover'} phase
  * @property {number} score
  * @property {number} highScore
+ * @property {number} level
+ * @property {number} levelHits
+ * @property {number} levelTransitionTimer
+ * @property {number} levelCompleteBonus
+ * @property {number} completedLevel
  * @property {Object} centralElement
  * @property {Object|null} flyingProjectile
  * @property {Object[]} anchoredProjectiles
  * @property {boolean} pendingLaunch
  * @property {number} gameOverTimestamp
  * @property {string} nextArrowId
- * @property {string} difficulty       - 'easy'|'medium'|'hard'
- * @property {number} lastReverseScore - último score en que se disparó inversión medium
+ * @property {string} difficulty
+ * @property {number} lastReverseScore
  */
 
 export function createInitialState(highScore = 0, difficulty = CONFIG.DEFAULT_DIFFICULTY, stats = null) {
-  const diff = DIFFICULTIES[difficulty];
+  const diff = DIFFICULTIES[difficulty] ?? DIFFICULTIES.medium;
   return {
     phase:   'idle',
     score:   0,
     highScore,
+    level: 1,
+    levelHits: 0,
+    levelTransitionTimer: 0,
+    levelCompleteBonus: 0,
+    completedLevel: 0,
     centralElement: {
       x:            CONFIG.CANVAS_WIDTH  / 2,
       y:            CONFIG.CANVAS_HEIGHT / 2,
@@ -54,4 +64,3 @@ export function createInitialState(highScore = 0, difficulty = CONFIG.DEFAULT_DI
 }
 
 export { randomIcon };
-

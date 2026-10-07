@@ -47,7 +47,7 @@ export function registerInputHandlers(canvas, state, abortController) {
     const { x, y } = toCanvasPoint(canvas, event);
 
     // El botón de configuración es UI y no cuenta como lanzamiento.
-    if (isSettingsPoint(canvas, x, y) && state.phase !== 'gameover') {
+    if (isSettingsPoint(canvas, x, y) && state.phase === 'playing') {
       canvas.dispatchEvent(new CustomEvent('settings-open'));
       return;
     }
@@ -59,7 +59,7 @@ export function registerInputHandlers(canvas, state, abortController) {
 
   canvas.addEventListener('mousemove', (event) => {
     const { x, y } = toCanvasPoint(canvas, event);
-    canvas.style.cursor = isSettingsPoint(canvas, x, y) ? 'pointer' : 'default';
+    canvas.style.cursor = (state.phase === 'playing' && isSettingsPoint(canvas, x, y)) ? 'pointer' : 'default';
   }, { signal });
 
   canvas.addEventListener('mouseleave', () => {

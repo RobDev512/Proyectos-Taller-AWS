@@ -30,6 +30,8 @@ const gamesPlayedStat = document.getElementById('gamesPlayedStat');
 const accuracyStat    = document.getElementById('accuracyStat');
 const perfectShotsStat= document.getElementById('perfectShotsStat');
 const bestComboStat   = document.getElementById('bestComboStat');
+const bestLevelStat   = document.getElementById('bestLevelStat');
+const levelsCompletedStat = document.getElementById('levelsCompletedStat');
 
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION} - ${APP_CODENAME}`;
 document.title = `AWS Arcade Game | v${APP_VERSION} - ${APP_CODENAME}`;
@@ -101,6 +103,8 @@ function updateStatsPanel() {
   if (accuracyStat) accuracyStat.textContent = `${getAccuracy(stats)}%`;
   if (perfectShotsStat) perfectShotsStat.textContent = String(stats.perfectShots);
   if (bestComboStat) bestComboStat.textContent = `×${stats.bestCombo}`;
+  if (bestLevelStat) bestLevelStat.textContent = String(stats.bestLevel ?? 1);
+  if (levelsCompletedStat) levelsCompletedStat.textContent = String(stats.levelsCompleted ?? 0);
 }
 
 // ── startGame ─────────────────────────────────────────────────────────────────
@@ -163,6 +167,7 @@ document.addEventListener('keydown', e => {
   }
 
   if ((e.key === 'p' || e.key === 's') &&
+      state.phase === 'playing' &&
       !settingsOverlay.classList.contains('visible') &&
       !overlayEl.classList.contains('visible')) {
     openSettings();

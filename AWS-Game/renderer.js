@@ -1,4 +1,5 @@
 import { APP_VERSION, APP_CODENAME } from './config.js';
+import { getLevelTarget, getLevelTheme, LEVEL_COMPLETE_DELAY } from './levels.js';
 
 /**
  * renderer.js — AWS Arcade Game
@@ -324,7 +325,8 @@ function drawHUD(ctx, state, progression, canvasW) {
 
   const difficulty = String(state.difficulty || 'medium').toUpperCase();
   const tier = progression?.tier ?? 1;
-  const badgeText = `${difficulty}  •  TIER ${tier}`;
+  const level = Math.max(1, state.level ?? 1);
+  const badgeText = `${difficulty}  •  LV ${level}  •  TIER ${tier}`;
   ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
   const tw = ctx.measureText(badgeText).width;
   roundedRectPath(ctx, canvasW / 2 - tw / 2 - 8, 40, tw + 16, 18, 9);
@@ -337,6 +339,40 @@ function drawHUD(ctx, state, progression, canvasW) {
   ctx.restore();
 }
 
+function drawLevelProgress(ctx, state, canvasW) {
+  const level = Math.max(1, state.level ?? 1);
+  const target = getLevelTarget(level);
+  const hits = Math.min(target, Math.max(0, state.levelHits ?? 0));
+  const ratio = target > 0 ? hits / target : 0;
+  const theme = getLevelTheme(level);
+
+  const barW = 190;
+  const barH = 8;
+  const x = (canvasW - barW) / 2;
+  const y = 119;
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.68)';
+  ctx.fillText(`LEVEL ${level}  •  ${hits}/${target} ARROWS`, canvasW / 2, y - 9);
+
+  roundedRectPath(ctx, x, y, barW, barH, barH / 2);
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  ctx.fill();
+
+  if (ratio > 0) {
+    roundedRectPath(ctx, x, y, Math.max(barH, barW * ratio), barH, barH / 2);
+    ctx.fillStyle = theme.ring;
+    ctx.shadowColor = theme.ring;
+    ctx.shadowBlur = 7;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  ctx.restore();
+}
+
 function drawComboBadge(ctx, state, canvasW) {
   const combo = state.comboLevel ?? 1;
   if (combo <= 1 || state.phase !== 'playing') return;
@@ -345,7 +381,7 @@ function drawComboBadge(ctx, state, canvasW) {
   ctx.save();
   ctx.font = 'bold 12px "Amazon Ember", Arial, sans-serif';
   const tw = ctx.measureText(text).width;
-  roundedRectPath(ctx, canvasW / 2 - tw / 2 - 12, 122, tw + 24, 27, 14);
+  roundedRectPath(ctx, canvasW / 2 - tw / 2 - 12, 145, tw + 24, 27, 14);
   ctx.fillStyle = 'rgba(255,153,0,.16)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(255,153,0,.55)';
@@ -354,7 +390,7 @@ function drawComboBadge(ctx, state, canvasW) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#FFB24D';
-  ctx.fillText(text, canvasW / 2, 135.5);
+  ctx.fillText(text, canvasW / 2, 158.5);
   ctx.restore();
 }
 
@@ -391,15 +427,16 @@ export function drawGameOverFlash(ctx, flashTimer) {
 // ---------------------------------------------------------------------------
 // Disco central
 // ---------------------------------------------------------------------------
-function drawDisc(ctx, ce, progression) {
+function drawDisc(ctx, ce, progression, level = 1) {
   const { x, y, radius, angle } = ce;
+  const theme = getLevelTheme(level);
   ctx.save();
   ctx.translate(x, y);
 
   // Fondo interior oscuro
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
-  ctx.fillStyle = COLOR_DISC_INNER;
+  ctx.fillStyle = theme.inner ?? COLOR_DISC_INNER;
   ctx.fill();
 
   // Radios giratorios
@@ -409,16 +446,15 @@ function drawDisc(ctx, ce, progression) {
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(Math.cos(a) * radius * 0.88, Math.sin(a) * radius * 0.88);
-    ctx.strokeStyle = 'rgba(255,153,0,0.3)';
+    ctx.strokeStyle = `${theme.ring}55`;
     ctx.lineWidth   = 1.5;
     ctx.stroke();
   }
 
   // Anillo exterior — color y brillo varían con el tier
-  const tier      = progression ? progression.tier : 1;
-  const tierColors = ['#FF9900','#FF9900','#FFB833','#FF6600','#FF3300','#CC0000'];
-  const ringColor  = tierColors[Math.min(tier, 5)];
-  const ringGlow   = tier >= 4;
+  const tier = progression ? progression.tier : 1;
+  const ringColor = tier >= 5 ? '#FF4D4D' : (tier >= 4 ? theme.accent : theme.ring);
+  const ringGlow = tier >= 4;
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
   if (ringGlow) {
@@ -433,14 +469,14 @@ function drawDisc(ctx, ce, progression) {
   // Anillo interior
   ctx.beginPath();
   ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(255,153,0,0.45)';
+  ctx.strokeStyle = `${theme.ring}73`;
   ctx.lineWidth   = 2.5;
   ctx.stroke();
 
   // Hub
   ctx.beginPath();
   ctx.arc(0, 0, radius * 0.15, 0, Math.PI * 2);
-  ctx.fillStyle = COLOR_DISC_RING;
+  ctx.fillStyle = theme.ring ?? COLOR_DISC_RING;
   ctx.fill();
 
   // Marcador de rotación
@@ -462,7 +498,7 @@ function drawDisc(ctx, ce, progression) {
 // ---------------------------------------------------------------------------
 function drawReadyArrow(ctx, state, assets, canvasW, canvasH) {
   if (state.flyingProjectile) return;
-  if (state.phase === 'gameover') return;
+  if (state.phase !== 'playing') return;
 
   const r  = 22;
   const cx = canvasW / 2;
@@ -478,6 +514,57 @@ function drawReadyArrow(ctx, state, assets, canvasW, canvasH) {
   drawArrow(ctx, cx, floatY, r, 0, state.nextArrowId, assets);
   ctx.globalAlpha = 1;
 }
+function drawLevelCompleteOverlay(ctx, state) {
+  if (state.phase !== 'levelcomplete') return;
+
+  const remaining = Math.max(0, state.levelTransitionTimer ?? 0);
+  const progress = 1 - Math.min(1, remaining / LEVEL_COMPLETE_DELAY);
+  const fadeIn = Math.min(1, progress * 5);
+  const fadeOut = Math.min(1, remaining * 3.2);
+  const alpha = Math.min(fadeIn, fadeOut);
+  const level = state.completedLevel || state.level || 1;
+  const nextLevel = level + 1;
+  const theme = getLevelTheme(level);
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0.15, alpha);
+  ctx.fillStyle = 'rgba(8,12,18,.58)';
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  const cardW = 360;
+  const cardH = 150;
+  const x = (ctx.canvas.width - cardW) / 2;
+  const y = (ctx.canvas.height - cardH) / 2 - 8;
+  roundedRectPath(ctx, x, y, cardW, cardH, 18);
+  ctx.fillStyle = 'rgba(26,35,50,.94)';
+  ctx.fill();
+  ctx.strokeStyle = theme.ring;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = theme.ring;
+  ctx.shadowBlur = 16;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 13px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = theme.accent;
+  ctx.fillText(`LEVEL ${level}`, ctx.canvas.width / 2, y + 28);
+
+  ctx.font = 'bold 30px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText('COMPLETE!', ctx.canvas.width / 2, y + 59);
+
+  ctx.font = 'bold 13px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFD166';
+  ctx.fillText(`LEVEL BONUS  +${state.levelCompleteBonus ?? 0}`, ctx.canvas.width / 2, y + 91);
+
+  ctx.font = '10px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.66)';
+  ctx.fillText(`NEXT: LEVEL ${nextLevel}  •  ${getLevelTarget(nextLevel)} ARROWS`, ctx.canvas.width / 2, y + 120);
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------------------
 // render — función principal exportada
 // ---------------------------------------------------------------------------
@@ -498,10 +585,11 @@ export function render(ctx, state, assets, progression = null) {
     drawTierIndicator(ctx, canvas.width, progression.tier);
   }
 
+  drawLevelProgress(ctx, state, canvas.width);
   drawComboBadge(ctx, state, canvas.width);
 
   // Disco
-  drawDisc(ctx, ce, progression);
+  drawDisc(ctx, ce, progression, state.level);
 
   // Proyectiles anclados
   // ap.angle = ángulo polar DEL CENTRO AL PROYECTIL.
@@ -529,6 +617,7 @@ export function render(ctx, state, assets, progression = null) {
   drawReadyArrow(ctx, state, assets, canvas.width, canvas.height);
 
   drawBottomHint(ctx, state, canvas.width, canvas.height);
+  drawLevelCompleteOverlay(ctx, state);
   drawVersion(ctx, canvas.width, canvas.height);
 }
 

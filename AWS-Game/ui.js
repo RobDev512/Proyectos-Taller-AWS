@@ -62,6 +62,8 @@ export function showGameOver(overlayEl, state) {
   // Actualizar los valores de score y high score dentro del overlay
   overlayEl.querySelector('#finalScore').textContent = state.score;
   overlayEl.querySelector('#finalHighScore').textContent = state.highScore;
+  const finalLevel = overlayEl.querySelector('#finalLevel');
+  if (finalLevel) finalLevel.textContent = String(state.level ?? 1);
 
   // Asegurar que el botón "Play Again" esté habilitado
   const playAgainBtn = overlayEl.querySelector('#playAgainBtn');

@@ -4,10 +4,10 @@
 
 import { updateRotation, triggerReverse } from './centralElement.js';
 import { launchProjectile, advanceProjectile, anchorProjectile } from './projectile.js';
-import { checkCollision }       from './collision.js';
+import { checkCollision } from './collision.js';
 import { render, drawGameOverFlash } from './renderer.js';
-import { showGameOver }         from './ui.js';
-import { getProgression }       from './config.js';
+import { showGameOver } from './ui.js';
+import { getProgression } from './config.js';
 import {
   playSoundLaunch,
   playSoundAnchor,
@@ -15,10 +15,11 @@ import {
   playSoundCombo,
   playSoundPerfect,
   playSoundTierUp,
+  playSoundLevelComplete,
 } from './sound.js';
 import { emitImpact, updateAndDraw, clearParticles } from './particles.js';
 import { registerAnchor, resetCombo } from './combo.js';
-import { updateHighScore }             from './scoring.js';
+import { updateHighScore } from './scoring.js';
 import { evaluatePerfectShot, PERFECT_BONUS } from './precision.js';
 import {
   emitFloatingText,
@@ -27,14 +28,28 @@ import {
   updateAndDrawFeedback,
   clearFeedback,
 } from './feedback.js';
-import { recordHit, recordPerfect, recordCombo, recordGameOver } from './stats.js';
+import {
+  recordHit,
+  recordPerfect,
+  recordCombo,
+  recordGameOver,
+  recordLevelComplete,
+} from './stats.js';
+import {
+  ensureLevelState,
+  getLevelTarget,
+  registerLevelHit,
+  isLevelComplete,
+  beginLevelComplete,
+  advanceToNextLevel,
+} from './levels.js';
 
-let rafId        = null;
+let rafId = null;
 let overlayShown = false;
 
 const SERVICE_COLORS = {
   lambda:'#E8702E', s3:'#569A31', ec2:'#ED7100', dynamodb:'#4053D6',
-  sqs:'#FF4F8B',    sns:'#E7157B', rds:'#527FFF', cloudwatch:'#E7157B',
+  sqs:'#FF4F8B', sns:'#E7157B', rds:'#527FFF', cloudwatch:'#E7157B',
 };
 
 let flashTimer = 0;
@@ -42,18 +57,21 @@ let flashTimer = 0;
 export function startGameLoop(ctx, state, assets, config, overlayEl) {
   stopGameLoop();
   overlayShown = false;
-  flashTimer   = 0;
+  flashTimer = 0;
   clearParticles();
   clearFeedback();
   resetCombo(state);
-  state.lastTier = getProgression(state.difficulty, state.score).tier;
+  ensureLevelState(state);
+  state.lastTier = getProgression(state.difficulty, state.score, state.level).tier;
+
+  emitBanner(`LEVEL ${state.level}`, `${getLevelTarget(state.level)} ARROWS TO CLEAR`);
 
   let lastTimestamp = performance.now();
 
   function tick(timestamp) {
     const deltaTime = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
     lastTimestamp = timestamp;
-    let progression = getProgression(state.difficulty, state.score);
+    let progression = getProgression(state.difficulty, state.score, state.level);
 
     if (flashTimer > 0) flashTimer -= deltaTime;
 
@@ -82,6 +100,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         if (result === 'anchor') {
           const scoreBefore = state.score;
           anchorProjectile(state); // +1 base
+          registerLevelHit(state);
 
           const ap = state.anchoredProjectiles[state.anchoredProjectiles.length - 1];
           const ce = state.centralElement;
@@ -131,12 +150,24 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
           }
 
           // Recalcular inmediatamente porque el tiro pudo sumar varios puntos.
-          progression = getProgression(state.difficulty, state.score);
+          progression = getProgression(state.difficulty, state.score, state.level);
           if (progression.tier > state.lastTier) {
             state.lastTier = progression.tier;
             emitBanner(`TIER ${progression.tier}`, 'La dificultad acaba de subir');
             emitImpact(ce.x, ce.y, '#FF9900', 36, 'confetti');
             playSoundTierUp();
+          }
+
+          // El objetivo del nivel se basa en flechas acertadas, no en score.
+          if (isLevelComplete(state)) {
+            const completed = state.level;
+            const bonus = beginLevelComplete(state);
+            state.score += bonus;
+            updateHighScore(state);
+            resetCombo(state);
+            if (state.stats) recordLevelComplete(state.stats, completed);
+            emitImpact(ce.x, ce.y, '#FF9900', 58, 'confetti');
+            playSoundLevelComplete();
           }
 
         } else if (result === 'collision') {
@@ -147,6 +178,18 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
           if (state.stats) recordGameOver(state.stats);
           playSoundGameOver();
         }
+      }
+    } else if (state.phase === 'levelcomplete') {
+      // Mantener el disco vivo durante la transición para que no se sienta congelado.
+      updateRotation(state, deltaTime, progression);
+      state.levelTransitionTimer -= deltaTime;
+
+      if (state.levelTransitionTimer <= 0) {
+        const nextLevel = advanceToNextLevel(state);
+        resetCombo(state);
+        progression = getProgression(state.difficulty, state.score, state.level);
+        state.lastTier = progression.tier;
+        emitBanner(`LEVEL ${nextLevel}`, `${getLevelTarget(nextLevel)} ARROWS TO CLEAR`);
       }
     }
 

@@ -194,3 +194,18 @@ html, body {
   text-align: center;
   margin-top: -8px;
 }
+
+/* ── v1.2.0: Level Update ──────────────────────────────────────────────── */
+.gameover-level {
+  margin-top: -8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,153,0,.28);
+  background: rgba(255,153,0,.08);
+  color: rgba(255,255,255,.72);
+  font-size: 12px;
+}
+.gameover-level strong {
+  color: #FFB24D;
+  font-size: 14px;
+}

@@ -11,17 +11,22 @@ function defaults() {
     hits: 0,
     perfectShots: 0,
     bestCombo: 1,
+    levelsCompleted: 0,
+    bestLevel: 1,
   };
 }
 
 function sanitize(value) {
   const d = defaults();
   if (!value || typeof value !== 'object') return d;
+
   for (const key of Object.keys(d)) {
     const n = Number.parseInt(value[key], 10);
     d[key] = Number.isFinite(n) && n >= 0 ? n : d[key];
   }
+
   d.bestCombo = Math.max(1, d.bestCombo);
+  d.bestLevel = Math.max(1, d.bestLevel);
   return d;
 }
 
@@ -62,6 +67,12 @@ export function recordPerfect(stats) {
 
 export function recordCombo(stats, level) {
   stats.bestCombo = Math.max(stats.bestCombo, Math.floor(level || 1));
+  saveStats(stats);
+}
+
+export function recordLevelComplete(stats, completedLevel) {
+  stats.levelsCompleted += 1;
+  stats.bestLevel = Math.max(stats.bestLevel, Math.floor(completedLevel || 1) + 1);
   saveStats(stats);
 }
 
