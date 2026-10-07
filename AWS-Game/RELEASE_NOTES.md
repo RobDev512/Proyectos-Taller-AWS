@@ -1,5 +1,39 @@
 # AWS Arcade Game — Release Notes
 
+## v1.3.1 - Interactive Power-Ups Patch
+- Hotfix visual del Power-Up Dock: botones más claros, textos sin recorte, hover visible y activación de teclas numéricas reforzada.
+
+Este parche amplía v1.3.0 con dos correcciones principales: un HUD sin superposiciones y un sistema de Power-Ups interactivo.
+
+### HUD y notificaciones
+- Las notificaciones `LEVEL`, `TIER`, adquisiciones y activaciones utilizan una zona central dedicada.
+- Los mensajes se muestran secuencialmente en lugar de competir por el mismo espacio.
+- Combo queda separado del progreso de nivel y del sistema de Power-Ups.
+- El estado de los efectos deja de ocupar la zona superior.
+
+### Power-Up Dock
+- Freeze, Shield, Double y Cleanup tienen slots permanentes y clicables.
+- Los Power-Ups se almacenan al acertar una Power-Up Arrow.
+- Activación con clic/tap o teclas `1–4`.
+- Máximo de 2 unidades almacenadas por tipo.
+- Los slots muestran cantidad y estado activo en tiempo real.
+- Cleanup puede activarse tácticamente siempre que exista una flecha anclada.
+
+### Power Charge
+- Cada acierto carga el medidor.
+- Perfect Shots y combos aceleran la carga.
+- Completar niveles añade carga adicional.
+- Al llegar al 100 %, el juego entrega automáticamente un Power-Up que tenga espacio en inventario.
+- Una Power-Up Arrow cuyo slot ya está lleno se convierte parcialmente en Power Charge.
+
+### Compatibilidad
+- El disparo sigue funcionando con clic/tap o Space.
+- El inventario y los efectos activos se mantienen entre niveles.
+- No se guarda estado de Power-Ups en LocalStorage entre partidas.
+- `collision.js` no cambia: la hitbox sigue en `fp.radius * 0.35`.
+
+---
+
 ## v1.3.0 - Power-Ups Update
 
 La actualización añade una nueva capa de estrategia sin cambiar el control de una sola acción del juego. Los Power-Ups aparecen directamente en determinadas flechas y se activan automáticamente al anclarlas con éxito.

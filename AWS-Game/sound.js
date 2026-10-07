@@ -126,6 +126,32 @@ export function playSoundPowerUp(type) {
   }
 }
 
+/** Sonido breve cuando un Power-Up entra al inventario. */
+export function playSoundPowerUpCollect(type) {
+  const base = {
+    freeze: 760,
+    shield: 620,
+    double: 880,
+    cleanup: 540,
+  }[type] ?? 660;
+
+  beep({
+    type: 'sine',
+    freq: base,
+    freq2: base * 1.28,
+    duration: 0.13,
+    gain: 0.14,
+  });
+
+  beep({
+    type: 'triangle',
+    freq: base * 1.35,
+    duration: 0.12,
+    gain: 0.10,
+    delay: 0.07,
+  });
+}
+
 /** Confirmación especial cuando Shield absorbe una colisión. */
 export function playSoundShieldSave() {
   beep({ type: 'square', freq: 180, freq2: 90, duration: 0.09, gain: 0.16 });

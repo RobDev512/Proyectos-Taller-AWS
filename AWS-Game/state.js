@@ -3,7 +3,10 @@
  */
 
 import { CONFIG, DIFFICULTIES } from './config.js';
-import { createActivePowerUps } from './powerups.js';
+import {
+  createActivePowerUps,
+  createPowerUpInventory,
+} from './powerups.js';
 
 function randomIcon() {
   return CONFIG.AWS_ICONS[Math.floor(Math.random() * CONFIG.AWS_ICONS.length)];
@@ -23,10 +26,13 @@ function randomIcon() {
  * @property {Object|null} flyingProjectile
  * @property {Object[]} anchoredProjectiles
  * @property {boolean} pendingLaunch
+ * @property {string|null} pendingPowerUpActivation
  * @property {number} gameOverTimestamp
  * @property {string} nextArrowId
  * @property {string|null} nextPowerUp
  * @property {{freezeTimer:number, shieldCharges:number, doubleScoreHits:number}} activePowerUps
+ * @property {{freeze:number, shield:number, double:number, cleanup:number}} powerUpInventory
+ * @property {number} powerUpCharge
  * @property {boolean} lastPreparedWasPowerUp
  * @property {string} difficulty
  * @property {number} lastReverseScore
@@ -64,12 +70,16 @@ export function createInitialState(
     flyingProjectile: null,
     anchoredProjectiles: [],
     pendingLaunch: false,
+    pendingPowerUpActivation: null,
+    hoveredPowerUpSlot: null,
     gameOverTimestamp: 0,
 
     nextArrowId: randomIcon(),
-
     nextPowerUp: null,
+
     activePowerUps: createActivePowerUps(),
+    powerUpInventory: createPowerUpInventory(),
+    powerUpCharge: 0,
     lastPreparedWasPowerUp: false,
 
     difficulty,

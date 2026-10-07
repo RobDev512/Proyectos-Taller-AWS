@@ -1,5 +1,5 @@
 /**
- * feedback.js — Textos flotantes, anillos de impacto y banners.
+ * feedback.js — Textos flotantes, anillos de impacto y notificaciones.
  */
 
 const texts = [];
@@ -29,15 +29,60 @@ export function emitRing(x, y, color = '#FF9900', strength = 1) {
   rings.push({ x, y, color, strength, life: 1, maxLife: 0.32 });
 }
 
-export function emitBanner(title, subtitle = '') {
-  banners.push({ title, subtitle, life: 1, maxLife: 1.5 });
+/**
+ * Las notificaciones ahora se muestran de una en una en una zona dedicada.
+ * priority='high' coloca la nueva notificación al frente de la cola.
+ */
+export function emitBanner(title, subtitle = '', options = {}) {
+  const item = {
+    title,
+    subtitle,
+    color: options.color ?? '#FF9900',
+    life: 1,
+    maxLife: options.duration ?? 1.2,
+  };
+
+  // Evitar duplicados inmediatos.
+  for (let i = banners.length - 1; i >= 0; i--) {
+    if (
+      banners[i].title === title &&
+      banners[i].subtitle === subtitle
+    ) {
+      banners.splice(i, 1);
+    }
+  }
+
+  if (options.priority === 'high') {
+    banners.unshift(item);
+  } else {
+    banners.push(item);
+  }
+
+  // No acumular mensajes viejos durante rachas muy rápidas.
+  while (banners.length > 4) {
+    banners.splice(banners.length - 1, 1);
+  }
+}
+
+function notificationPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    ctx.rect(x, y, w, h);
+  }
 }
 
 export function updateAndDrawFeedback(ctx, dt) {
   for (let i = texts.length - 1; i >= 0; i--) {
     const item = texts[i];
     item.life -= dt / item.maxLife;
-    if (item.life <= 0) { texts.splice(i, 1); continue; }
+    if (item.life <= 0) {
+      texts.splice(i, 1);
+      continue;
+    }
+
     item.y += item.vy * dt;
 
     ctx.save();
@@ -47,7 +92,7 @@ export function updateAndDrawFeedback(ctx, dt) {
     ctx.font = `bold ${item.size}px "Amazon Ember", Arial, sans-serif`;
     ctx.fillStyle = item.color;
     ctx.shadowColor = 'rgba(0,0,0,.65)';
-    ctx.shadowBlur = 5;
+    ctx.shadowBlur = decorativeEnabled ? 5 : 0;
     ctx.fillText(item.text, item.x, item.y);
     ctx.restore();
   }
@@ -55,10 +100,14 @@ export function updateAndDrawFeedback(ctx, dt) {
   for (let i = rings.length - 1; i >= 0; i--) {
     const ring = rings[i];
     ring.life -= dt / ring.maxLife;
-    if (ring.life <= 0) { rings.splice(i, 1); continue; }
+    if (ring.life <= 0) {
+      rings.splice(i, 1);
+      continue;
+    }
 
     const progress = 1 - ring.life;
     const radius = 10 + progress * 34 * ring.strength;
+
     ctx.save();
     ctx.globalAlpha = Math.max(0, ring.life * 0.8);
     ctx.beginPath();
@@ -72,30 +121,51 @@ export function updateAndDrawFeedback(ctx, dt) {
   }
 
   if (banners.length) {
-    const banner = banners[banners.length - 1];
+    const banner = banners[0];
     banner.life -= dt / banner.maxLife;
+
     if (banner.life <= 0) {
-      banners.pop();
+      banners.shift();
     } else {
-      const fadeIn = Math.min(1, (1 - banner.life) * 8);
-      const fadeOut = Math.min(1, banner.life * 4);
+      const fadeIn = Math.min(1, (1 - banner.life) * 9);
+      const fadeOut = Math.min(1, banner.life * 4.5);
       const alpha = Math.min(fadeIn, fadeOut);
-      const y = 165 - (1 - banner.life) * 7;
+
+      // Zona exclusiva entre el progreso superior y el disco.
+      const w = 270;
+      const h = 54;
+      const x = (ctx.canvas.width - w) / 2;
+      const y = 158;
+
       ctx.save();
       ctx.globalAlpha = alpha;
+
+      notificationPath(ctx, x, y, w, h, 14);
+      ctx.fillStyle = 'rgba(13,17,23,.78)';
+      ctx.fill();
+      ctx.strokeStyle = `${banner.color}AA`;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold 28px "Amazon Ember", Arial, sans-serif';
-      ctx.fillStyle = '#FF9900';
-      ctx.shadowColor = '#FF9900';
-      ctx.shadowBlur = decorativeEnabled ? 12 : 0;
-      ctx.fillText(banner.title, ctx.canvas.width / 2, y);
+      ctx.font = 'bold 21px "Amazon Ember", Arial, sans-serif';
+      ctx.fillStyle = banner.color;
+      ctx.shadowColor = banner.color;
+      ctx.shadowBlur = decorativeEnabled ? 10 : 0;
+      ctx.fillText(banner.title, ctx.canvas.width / 2, y + 21);
+
       ctx.shadowBlur = 0;
       if (banner.subtitle) {
-        ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,.8)';
-        ctx.fillText(banner.subtitle, ctx.canvas.width / 2, y + 24);
+        ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,.78)';
+        ctx.fillText(
+          banner.subtitle,
+          ctx.canvas.width / 2,
+          y + 40,
+        );
       }
+
       ctx.restore();
     }
   }

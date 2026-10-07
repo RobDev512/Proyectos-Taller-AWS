@@ -7,7 +7,7 @@ https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
 ## Versión actual
 
-**v1.3.0 - Power-Ups Update**
+**v1.3.1 - Interactive Power-Ups Patch**
 
 ## Gameplay
 
@@ -21,14 +21,16 @@ El juego está diseñado alrededor de un control sencillo de una sola acción, p
 
 ## Power-Ups
 
-Desde el Level 2 algunas flechas pueden aparecer como Power-Up Arrows. Se identifican mediante un badge adicional y su efecto se activa automáticamente al anclarlas correctamente.
+Desde el Level 2 algunas flechas pueden aparecer como Power-Up Arrows. Al anclarlas correctamente, el efecto se guarda en el **Power-Up Dock** en lugar de activarse automáticamente.
 
 - **FRZ — Freeze:** detiene temporalmente la rotación.
 - **SHD — Shield:** absorbe una colisión.
 - **2X — Double Score:** duplica los puntos de los siguientes 3 aciertos.
 - **CLR — Cleanup:** elimina la flecha anclada más antigua.
 
-Los Power-Ups no aparecen consecutivamente y el juego evita ofrecer efectos que no sean útiles en el estado actual.
+Los Power-Ups se activan con clic/tap en su slot o con las teclas `1–4`. Cada tipo puede almacenar hasta 2 unidades.
+
+Además, los aciertos, Perfect Shots, combos y niveles completados alimentan **Power Charge**. Al llegar al 100 %, el juego concede un Power-Up adicional con espacio disponible.
 
 ## Características
 
@@ -108,6 +110,16 @@ Añade cuatro Power-Ups automáticos sin cambiar el control principal:
 - Cleanup.
 
 También incorpora HUD de efectos activos, sonidos y feedback específicos y nuevas estadísticas persistentes.
+
+### v1.3.1 - Interactive Power-Ups Patch
+
+Parche grande de interfaz y jugabilidad:
+
+- Corrige la superposición de mensajes, Combo y Power-Ups.
+- Añade un Power-Up Dock interactivo.
+- Permite guardar y activar Power-Ups manualmente.
+- Añade activación por clic/tap y teclas `1–4`.
+- Introduce Power Charge como sistema adicional de recompensas.
 
 ## GitHub Pages
 
