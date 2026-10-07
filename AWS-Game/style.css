@@ -160,3 +160,37 @@ html, body {
   .gameover-value { font-size: 31px; }
   #settingsCard { min-width: min(300px, calc(100% - 28px)); }
 }
+
+/* ── v1.1.0: estadísticas y versión ─────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.stat-card {
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,153,0,.16);
+  border-radius: 8px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.stat-value {
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+}
+.stat-name {
+  color: rgba(255,255,255,.48);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.version-label {
+  color: rgba(255,255,255,.34);
+  font-size: 10px;
+  text-align: center;
+  margin-top: -8px;
+}

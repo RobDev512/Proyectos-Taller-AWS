@@ -1,43 +1,66 @@
 /**
  * scoring.js
  * ----------
- * Gestión del Score y el High Score en memoria.
- * No persiste datos fuera del GameState; la persistencia entre partidas
- * se delega a `captureHighScore` + `createInitialState`.
+ * Gestión del Score y del High Score.
+ * El récord se guarda en localStorage para conservarlo incluso al cerrar
+ * y volver a abrir el juego.
  */
 
+const HIGH_SCORE_KEY = 'awsArcadeHighScore';
+
 /**
- * Incrementa el Score de la partida en curso en 1 punto.
- * Si el nuevo Score supera el High Score actual, actualiza también el High Score.
- *
- * @param {import('./state.js').GameState} state - Estado mutable del juego.
- *
- * Requirement 4.2 — cada anclaje exitoso suma 1 punto.
- * Requirement 6.3 / 9.3 — el High Score se actualiza en el mismo instante
- *                          en que el Score lo supera.
+ * Lee el récord guardado. Si el navegador no permite localStorage o el dato
+ * no es válido, devuelve 0 sin romper el juego.
  */
-export function incrementScore(state) {
-  state.score += 1;
-  if (state.score > state.highScore) {
-    state.highScore = state.score;
+export function loadHighScore() {
+  try {
+    const raw = localStorage.getItem(HIGH_SCORE_KEY);
+    const value = Number.parseInt(raw ?? '0', 10);
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  } catch {
+    return 0;
   }
 }
 
 /**
- * Retorna el High Score que debe conservarse para la próxima partida.
- * Toma el mayor entre `state.score` y `state.highScore` para garantizar
- * que una actualización tardía nunca se pierda.
- *
- * Uso típico al reiniciar:
- *   const hs = captureHighScore(state);
- *   state = createInitialState(hs);
- *
- * @param {import('./state.js').GameState} state
- * @returns {number} El High Score a preservar entre partidas.
- *
- * Requirement 9.2 — el High Score se conserva en memoria entre partidas
- *                    sin almacenamiento externo.
+ * Guarda un récord válido en localStorage.
+ */
+export function saveHighScore(value) {
+  const safeValue = Math.max(0, Math.floor(Number(value) || 0));
+  try {
+    localStorage.setItem(HIGH_SCORE_KEY, String(safeValue));
+  } catch {
+    // Si localStorage no está disponible, el juego continúa usando memoria.
+  }
+  return safeValue;
+}
+
+/**
+ * Sincroniza el récord del estado con el score actual y lo persiste si cambia.
+ */
+export function updateHighScore(state) {
+  const nextHighScore = Math.max(state.highScore ?? 0, state.score ?? 0);
+  if (nextHighScore !== state.highScore) {
+    state.highScore = nextHighScore;
+    saveHighScore(nextHighScore);
+  }
+  return state.highScore;
+}
+
+/**
+ * Incrementa el Score de la partida en curso en 1 punto y actualiza el récord.
+ */
+export function incrementScore(state) {
+  state.score += 1;
+  updateHighScore(state);
+}
+
+/**
+ * Retorna el High Score que debe conservarse para la próxima partida y se
+ * asegura de que quede guardado permanentemente.
  */
 export function captureHighScore(state) {
-  return Math.max(state.score, state.highScore);
+  const highScore = updateHighScore(state);
+  saveHighScore(highScore);
+  return highScore;
 }

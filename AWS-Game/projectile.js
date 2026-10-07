@@ -4,6 +4,7 @@
 
 import { incrementScore } from './scoring.js';
 import { randomIcon }     from './state.js';
+import { recordShot }     from './stats.js';
 
 /**
  * @typedef {Object} FlyingProjectile
@@ -44,6 +45,7 @@ export function launchProjectile(state, config) {
     awsIconId,
   };
 
+  if (state.stats) recordShot(state.stats);
   state.pendingLaunch = false;
 }
 

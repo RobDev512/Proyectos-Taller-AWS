@@ -1,19 +1,18 @@
 /**
- * main.js — Punto de entrada con responsive correcto.
- * El canvas se dimensiona por CSS para ocupar el viewport manteniendo
- * aspect ratio. El HUD se dibuja dentro del canvas por el renderer.
- * Los overlays modales se posicionan sobre el canvas via JS.
+ * main.js — Punto de entrada y coordinación de UI.
  */
 
-import { CONFIG }                      from './config.js';
-import { createInitialState }          from './state.js';
-import { captureHighScore }            from './scoring.js';
-import { registerInputHandlers }       from './input.js';
-import { startGameLoop }               from './gameLoop.js';
-import { hideGameOver }                from './ui.js';
-import { setSoundEnabled }             from './sound.js';
-import { setFxEnabled }                from './particles.js';
-import { setComboEnabled }             from './combo.js';
+import { CONFIG, APP_VERSION, APP_CODENAME } from './config.js';
+import { createInitialState }                from './state.js';
+import { captureHighScore, loadHighScore }   from './scoring.js';
+import { registerInputHandlers }             from './input.js';
+import { startGameLoop }                     from './gameLoop.js';
+import { hideGameOver }                      from './ui.js';
+import { setSoundEnabled }                   from './sound.js';
+import { setFxEnabled }                      from './particles.js';
+import { setComboEnabled }                   from './combo.js';
+import { loadPreferences, savePreferences }  from './preferences.js';
+import { loadStats, getAccuracy }            from './stats.js';
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
 const canvas          = document.getElementById('gameCanvas');
@@ -26,6 +25,14 @@ const diffBtns        = document.querySelectorAll('.diff-btn');
 const soundToggle     = document.getElementById('soundToggle');
 const comboToggle     = document.getElementById('comboToggle');
 const fxToggle        = document.getElementById('fxToggle');
+const versionLabel    = document.getElementById('versionLabel');
+const gamesPlayedStat = document.getElementById('gamesPlayedStat');
+const accuracyStat    = document.getElementById('accuracyStat');
+const perfectShotsStat= document.getElementById('perfectShotsStat');
+const bestComboStat   = document.getElementById('bestComboStat');
+
+if (versionLabel) versionLabel.textContent = `v${APP_VERSION} - ${APP_CODENAME}`;
+document.title = `AWS Arcade Game | v${APP_VERSION} - ${APP_CODENAME}`;
 
 // ── Contexto ─────────────────────────────────────────────────────────────────
 const ctx = canvas.getContext('2d');
@@ -40,31 +47,29 @@ for (const id of CONFIG.AWS_ICONS) {
 }
 
 // ── Responsive ───────────────────────────────────────────────────────────────
-// El canvas tiene resolución lógica fija (600×700).
-// Lo escalamos con CSS width/height para caber en el viewport sin scroll.
-// Los overlays modales se colocan encima del canvas calculando su rect.
-
 function fitCanvas() {
-  const vw    = window.innerWidth;
-  const vh    = window.innerHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
   const ratio = CONFIG.CANVAS_WIDTH / CONFIG.CANVAS_HEIGHT;
   let w, h;
+
   if (vw / vh > ratio) {
-    h = vh; w = h * ratio;
+    h = vh;
+    w = h * ratio;
   } else {
-    w = vw; h = w / ratio;
+    w = vw;
+    h = w / ratio;
   }
-  // CSS size — el canvas interno sigue siendo 600×700 (resolución lógica)
-  canvas.style.width  = `${w}px`;
+
+  canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
 
-  // Posicionar los overlays modales exactamente sobre el canvas
   const left = (vw - w) / 2;
-  const top  = (vh - h) / 2;
+  const top = (vh - h) / 2;
   for (const el of [overlayEl, settingsOverlay]) {
-    el.style.left   = `${left}px`;
-    el.style.top    = `${top}px`;
-    el.style.width  = `${w}px`;
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+    el.style.width = `${w}px`;
     el.style.height = `${h}px`;
   }
 }
@@ -72,11 +77,17 @@ function fitCanvas() {
 fitCanvas();
 window.addEventListener('resize', fitCanvas);
 
-// ── Estado y opciones ─────────────────────────────────────────────────────────
-let currentDifficulty = CONFIG.DEFAULT_DIFFICULTY;
-let state             = createInitialState(0, currentDifficulty);
-let inputController   = null;
-const options         = { sound: true, combo: true, fx: true };
+// ── Estado, preferencias y estadísticas ──────────────────────────────────────
+const preferences = loadPreferences();
+const stats = loadStats();
+let currentDifficulty = preferences.difficulty;
+let state = createInitialState(loadHighScore(), currentDifficulty, stats);
+let inputController = null;
+const options = {
+  sound: preferences.sound,
+  combo: preferences.combo,
+  fx: preferences.fx,
+};
 
 function applyOptions() {
   setSoundEnabled(options.sound);
@@ -84,6 +95,13 @@ function applyOptions() {
   setFxEnabled(options.fx);
 }
 applyOptions();
+
+function updateStatsPanel() {
+  if (gamesPlayedStat) gamesPlayedStat.textContent = String(stats.gamesPlayed);
+  if (accuracyStat) accuracyStat.textContent = `${getAccuracy(stats)}%`;
+  if (perfectShotsStat) perfectShotsStat.textContent = String(stats.perfectShots);
+  if (bestComboStat) bestComboStat.textContent = `×${stats.bestCombo}`;
+}
 
 // ── startGame ─────────────────────────────────────────────────────────────────
 function startGame() {
@@ -98,7 +116,7 @@ startGame();
 // ── Play Again ────────────────────────────────────────────────────────────────
 playAgainBtn.addEventListener('click', () => {
   const hs = captureHighScore(state);
-  state = createInitialState(hs, currentDifficulty);
+  state = createInitialState(hs, currentDifficulty, stats);
   hideGameOver(overlayEl);
   startGame();
 });
@@ -112,33 +130,38 @@ function openSettings() {
   diffBtns.forEach(b => b.classList.toggle('selected', b.dataset.diff === selectedDiff));
   syncToggle(soundToggle, options.sound);
   syncToggle(comboToggle, options.combo);
-  syncToggle(fxToggle,    options.fx);
+  syncToggle(fxToggle, options.fx);
+  updateStatsPanel();
   settingsOverlay.classList.add('visible');
 }
 
 function closeSettings(apply) {
   settingsOverlay.classList.remove('visible');
+
   if (apply) {
     currentDifficulty = selectedDiff;
     options.sound = soundToggle.classList.contains('on');
     options.combo = comboToggle.classList.contains('on');
-    options.fx    = fxToggle.classList.contains('on');
+    options.fx = fxToggle.classList.contains('on');
     applyOptions();
+    savePreferences({ difficulty: currentDifficulty, ...options });
+
     const hs = captureHighScore(state);
-    state = createInitialState(hs, currentDifficulty);
+    state = createInitialState(hs, currentDifficulty, stats);
     hideGameOver(overlayEl);
     startGame();
-  } else {
-    if (state.phase === 'idle') state.phase = 'playing';
+  } else if (state.phase === 'idle') {
+    state.phase = 'playing';
   }
 }
 
-// Botón ⚙ — el renderer lo dibuja en el canvas y notifica via evento custom
 canvas.addEventListener('settings-open', openSettings);
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && settingsOverlay.classList.contains('visible'))
+  if (e.key === 'Escape' && settingsOverlay.classList.contains('visible')) {
     closeSettings(false);
-  // Atajo: 'p' o 's' abre settings
+  }
+
   if ((e.key === 'p' || e.key === 's') &&
       !settingsOverlay.classList.contains('visible') &&
       !overlayEl.classList.contains('visible')) {
@@ -158,6 +181,7 @@ function syncToggle(btn, val) {
   btn.classList.toggle('on', val);
   btn.setAttribute('aria-pressed', String(val));
 }
+
 [soundToggle, comboToggle, fxToggle].forEach(btn => {
   btn.addEventListener('click', () => {
     const on = btn.classList.toggle('on');

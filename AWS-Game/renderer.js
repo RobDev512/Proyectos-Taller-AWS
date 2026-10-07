@@ -1,3 +1,5 @@
+import { APP_VERSION, APP_CODENAME } from './config.js';
+
 /**
  * renderer.js — AWS Arcade Game
  *
@@ -367,6 +369,16 @@ function drawBottomHint(ctx, state, canvasW, canvasH) {
   ctx.restore();
 }
 
+function drawVersion(ctx, canvasW, canvasH) {
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = '9px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  ctx.fillText(`v${APP_VERSION} - ${APP_CODENAME}`, 12, canvasH - 14);
+  ctx.restore();
+}
+
 export function drawGameOverFlash(ctx, flashTimer) {
   if (!(flashTimer > 0)) return;
   const alpha = Math.min(0.22, flashTimer * 0.88);
@@ -517,6 +529,7 @@ export function render(ctx, state, assets, progression = null) {
   drawReadyArrow(ctx, state, assets, canvas.width, canvas.height);
 
   drawBottomHint(ctx, state, canvas.width, canvas.height);
+  drawVersion(ctx, canvas.width, canvas.height);
 }
 
 

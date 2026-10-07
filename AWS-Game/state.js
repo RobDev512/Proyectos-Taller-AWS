@@ -23,7 +23,7 @@ function randomIcon() {
  * @property {number} lastReverseScore - último score en que se disparó inversión medium
  */
 
-export function createInitialState(highScore = 0, difficulty = CONFIG.DEFAULT_DIFFICULTY) {
+export function createInitialState(highScore = 0, difficulty = CONFIG.DEFAULT_DIFFICULTY, stats = null) {
   const diff = DIFFICULTIES[difficulty];
   return {
     phase:   'idle',
@@ -46,8 +46,10 @@ export function createInitialState(highScore = 0, difficulty = CONFIG.DEFAULT_DI
     nextArrowId:         randomIcon(),
     difficulty,
     lastReverseScore:    0,
+    lastTier:            1,
     comboLevel:          1,
     lastAnchorTime:      0,
+    stats,
   };
 }
 

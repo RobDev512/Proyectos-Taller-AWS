@@ -53,6 +53,10 @@ export function getProgression(diffKey, score) {
   }
 }
 
+
+export const APP_VERSION = '1.1.0';
+export const APP_CODENAME = 'Progression Update';
+
 export const DIFFICULTIES = {
   easy: {
     label:         'Easy',

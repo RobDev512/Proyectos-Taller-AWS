@@ -69,3 +69,18 @@ export function playSoundCombo(level) {
   beep({ type: 'sine', freq: f,       duration: 0.12, gain: 0.2 });
   beep({ type: 'sine', freq: f * 1.5, duration: 0.10, gain: 0.12, delay: 0.08 });
 }
+
+
+/** Campanilla brillante para un Perfect Shot. */
+export function playSoundPerfect() {
+  beep({ type: 'sine', freq: 880,  duration: 0.10, gain: 0.20 });
+  beep({ type: 'sine', freq: 1175, duration: 0.13, gain: 0.16, delay: 0.07 });
+  beep({ type: 'sine', freq: 1320, duration: 0.12, gain: 0.12, delay: 0.14 });
+}
+
+/** Acorde corto al subir de Tier. */
+export function playSoundTierUp() {
+  beep({ type: 'triangle', freq: 523, duration: 0.12, gain: 0.20 });
+  beep({ type: 'triangle', freq: 659, duration: 0.14, gain: 0.18, delay: 0.08 });
+  beep({ type: 'triangle', freq: 784, duration: 0.18, gain: 0.16, delay: 0.16 });
+}

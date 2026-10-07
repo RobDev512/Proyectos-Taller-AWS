@@ -70,10 +70,21 @@
           <button id="fxToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
       </div>
+
+      <div class="settings-section stats-section">
+        <p class="settings-label">Estadísticas locales</p>
+        <div class="stats-grid">
+          <div class="stat-card"><span id="gamesPlayedStat" class="stat-value">0</span><span class="stat-name">Partidas</span></div>
+          <div class="stat-card"><span id="accuracyStat" class="stat-value">0%</span><span class="stat-name">Precisión</span></div>
+          <div class="stat-card"><span id="perfectShotsStat" class="stat-value">0</span><span class="stat-name">Perfects</span></div>
+          <div class="stat-card"><span id="bestComboStat" class="stat-value">×1</span><span class="stat-name">Mejor combo</span></div>
+        </div>
+      </div>
       <div class="settings-actions">
         <button id="settingsApplyBtn" type="button">Aplicar y reiniciar</button>
         <button id="settingsCloseBtn" type="button" class="btn-secondary">Cerrar</button>
       </div>
+      <p id="versionLabel" class="version-label"></p>
     </div>
   </div>
 
