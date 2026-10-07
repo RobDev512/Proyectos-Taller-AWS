@@ -3,7 +3,7 @@
 Juego arcade con temática de AWS desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development.
 
 🎮 **Jugar ahora:**  
-https://robdev512.github.io/AWS-Game/
+https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
 ## Versión actual
 
@@ -89,6 +89,6 @@ Patch de interfaz que corrige el HUD superior:
 
 La versión estable del juego se publica mediante GitHub Pages:
 
-https://robdev512.github.io/AWS-Game/
+https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
 Este repositorio público funciona también como versión desplegable del proyecto.

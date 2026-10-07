@@ -9,10 +9,10 @@ Repositorio general para proyectos, ejercicios, pruebas y experimentos realizado
 Juego arcade desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development.
 
 🎮 **Jugar en línea:**  
-https://robdev512.github.io/AWS-Game/
+https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
 📦 **Repositorio público del juego:**  
-https://github.com/RobDev512/AWS-Game
+https://github.com/RobDev512/Proyectos-Taller-AWS/tree/main/AWS-Game
 
 El proyecto está desarrollado con:
 
