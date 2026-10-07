@@ -29,11 +29,11 @@
   - [x] 3.6 Excluir Cleanup si no existen suficientes Anchored Projectiles
   - _Requirements: 1_
 
-- [ ] 4. Integrar Power-Ups con Projectile
-  - [ ] 4.1 Añadir `powerUpType` a FlyingProjectile
-  - [ ] 4.2 Copiar `state.nextPowerUp` al lanzar
-  - [ ] 4.3 Preparar el Power-Up de la siguiente flecha
-  - [ ] 4.4 Mantener intactos `awsIconId`, radius y velocidad
+- [x] 4. Integrar Power-Ups con Projectile
+  - [x] 4.1 Añadir `powerUpType` a FlyingProjectile
+  - [x] 4.2 Copiar `state.nextPowerUp` al lanzar
+  - [x] 4.3 Preparar el Power-Up de la siguiente flecha
+  - [x] 4.4 Mantener intactos `awsIconId`, radius y velocidad
   - _Requirements: 2, 3, 13_
 
 - [ ] 5. Implementar Freeze
