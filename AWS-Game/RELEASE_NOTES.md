@@ -1,4 +1,16 @@
-# AWS Arcade Game — v1.2.0 - Level Update
+# AWS Arcade Game — Release Notes
+
+## v1.2.1 - HUD Fix
+
+Patch de interfaz para la actualización de niveles.
+
+### Cambios
+- Corregido el solapamiento entre las estrellas de Tier y el indicador `LEVEL X • Y/Z ARROWS`.
+- Mejorado el espaciado de la barra de progreso.
+- Eliminadas solicitudes a fuentes inexistentes y al favicon faltante.
+- Sin cambios en la mecánica del juego, dificultad o colisiones.
+
+## v1.2.0 - Level Update
 
 Esta versión convierte la partida infinita original en una progresión por fases sin perder el score acumulado.
 

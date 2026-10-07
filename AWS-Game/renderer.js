@@ -206,7 +206,7 @@ function drawTierIndicator(ctx, canvasW, tier) {
   const gap       = 6;
   const totalW    = maxTier * starSize * 2 + (maxTier - 1) * gap;
   const startX    = (canvasW - totalW) / 2 + starSize;
-  const y         = 100;  // debajo del HUD
+  const y         = 91;   // fila de estrellas separada del progreso
 
   for (let i = 0; i < maxTier; i++) {
     const cx = startX + i * (starSize * 2 + gap);
@@ -349,14 +349,14 @@ function drawLevelProgress(ctx, state, canvasW) {
   const barW = 190;
   const barH = 8;
   const x = (canvasW - barW) / 2;
-  const y = 119;
+  const y = 128;
 
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,.68)';
-  ctx.fillText(`LEVEL ${level}  •  ${hits}/${target} ARROWS`, canvasW / 2, y - 9);
+  ctx.fillText(`LEVEL ${level}  •  ${hits}/${target} ARROWS`, canvasW / 2, y - 13);
 
   roundedRectPath(ctx, x, y, barW, barH, barH / 2);
   ctx.fillStyle = 'rgba(255,255,255,.08)';
@@ -620,7 +620,3 @@ export function render(ctx, state, assets, progression = null) {
   drawLevelCompleteOverlay(ctx, state);
   drawVersion(ctx, canvas.width, canvas.height);
 }
-
-
-
-

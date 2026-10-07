@@ -1,5 +1,14 @@
 # AWS Arcade Game — Changelog
 
+## v1.2.1 — HUD Fix
+- Corregido el solapamiento entre las estrellas de Tier y el texto de progreso de nivel.
+- Mejorado el espaciado vertical del HUD superior.
+- Reubicada ligeramente la barra de progreso para mejorar la legibilidad.
+- Versión actualizada a `v1.2.1 - HUD Fix`.
+- Eliminadas referencias a archivos de fuente inexistentes que generaban errores 404.
+- Evitada la solicitud innecesaria de favicon inexistente.
+- No se realizaron cambios en gameplay, dificultad ni hitboxes.
+
 ## v1.2.0 — Level Update
 - Nuevo sistema de niveles con objetivos crecientes de flechas acertadas.
 - Transición **LEVEL COMPLETE** con bonus de puntuación y confetti.

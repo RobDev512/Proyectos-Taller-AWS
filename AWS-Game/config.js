@@ -70,8 +70,8 @@ export function getProgression(diffKey, score, level = 1) {
   }
 }
 
-export const APP_VERSION = '1.2.0';
-export const APP_CODENAME = 'Level Update';
+export const APP_VERSION = '1.2.1';
+export const APP_CODENAME = 'HUD Fix';
 
 export const DIFFICULTIES = {
   easy: {

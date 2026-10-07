@@ -29,6 +29,7 @@ Sin frameworks externos.
 - `aws-game-v1.0.0` — Workshop Build
 - `aws-game-v1.1.0` — Progression Update
 - `aws-game-v1.2.0` — Level Update
+- `aws-game-v1.2.1` — HUD Fix
 
 Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
@@ -51,4 +52,4 @@ Posteriormente el proyecto continuó desarrollándose fuera del workshop con nue
 
 La versión estable publicada actualmente es:
 
-**v1.2.0 - Level Update**
+**v1.2.1 - HUD Fix**

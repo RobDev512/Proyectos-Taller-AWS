@@ -2,19 +2,6 @@
    style.css — AWS Arcade Game — Responsive limpio
    ============================================================ */
 
-@font-face {
-  font-family: "Amazon Ember";
-  src: url("assets/fonts/AmazonEmber_Rg.woff2") format("woff2"),
-       url("assets/fonts/AmazonEmber_Rg.woff")  format("woff");
-  font-weight: normal; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "Amazon Ember";
-  src: url("assets/fonts/AmazonEmber_Bd.woff2") format("woff2"),
-       url("assets/fonts/AmazonEmber_Bd.woff")  format("woff");
-  font-weight: bold; font-style: normal; font-display: swap;
-}
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {

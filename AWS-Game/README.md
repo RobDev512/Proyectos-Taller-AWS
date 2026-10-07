@@ -7,7 +7,7 @@ https://robdev512.github.io/AWS-Game/
 
 ## Versión actual
 
-**v1.2.0 - Level Update**
+**v1.2.1 - HUD Fix**
 
 ## Gameplay
 
@@ -76,6 +76,14 @@ Introdujo el sistema de niveles, incluyendo:
 - Incremento progresivo de dificultad.
 - Cambios visuales por nivel.
 - Nuevas estadísticas relacionadas con niveles.
+
+### v1.2.1 - HUD Fix
+
+Patch de interfaz que corrige el HUD superior:
+
+- Separación correcta entre las estrellas de Tier y el progreso de nivel.
+- Mejor espaciado de la barra de progreso.
+- Sin cambios en gameplay ni dificultad.
 
 ## GitHub Pages
 
