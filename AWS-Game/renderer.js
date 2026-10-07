@@ -1,5 +1,6 @@
 import { APP_VERSION, APP_CODENAME } from './config.js';
 import { getLevelTarget, getLevelTheme, LEVEL_COMPLETE_DELAY } from './levels.js';
+import { POWER_UP_CONFIG, isPowerUpType } from './powerups.js';
 
 /**
  * renderer.js — AWS Arcade Game
@@ -198,6 +199,41 @@ function drawArrow(ctx, cx, cy, radius, angle, awsIconId, assets) {
 }
 
 // ---------------------------------------------------------------------------
+// Power-Up marker — badge visual adicional; no altera dimensiones ni hitbox.
+// ---------------------------------------------------------------------------
+function drawPowerUpMarker(ctx, x, y, radius, type) {
+  if (!isPowerUpType(type)) return;
+
+  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+  const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
+  const badgeR = Math.max(9, radius * 0.52);
+  const bx = x + radius * 0.92;
+  const by = y - radius * 1.18;
+
+  ctx.save();
+
+  ctx.beginPath();
+  ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 9;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = 'rgba(255,255,255,.86)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold ${Math.max(7, Math.floor(badgeR * 0.78))}px "Amazon Ember", Arial, sans-serif`;
+  ctx.fillStyle = '#0E1824';
+  ctx.fillText(label, bx, by + 0.5);
+
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
 // drawTierIndicator — fila de estrellas que indica el tier de progresión
 // ---------------------------------------------------------------------------
 function drawTierIndicator(ctx, canvasW, tier) {
@@ -373,15 +409,88 @@ function drawLevelProgress(ctx, state, canvasW) {
   ctx.restore();
 }
 
-function drawComboBadge(ctx, state, canvasW) {
+function getActivePowerUpBadges(state) {
+  const active = state.activePowerUps ?? {};
+  const badges = [];
+
+  const freezeTimer = Number(active.freezeTimer);
+  if (Number.isFinite(freezeTimer) && freezeTimer > 0) {
+    badges.push({
+      type: 'freeze',
+      text: `FRZ ${freezeTimer.toFixed(1)}s`,
+    });
+  }
+
+  const shieldCharges = Math.max(0, Math.floor(Number(active.shieldCharges) || 0));
+  if (shieldCharges > 0) {
+    badges.push({
+      type: 'shield',
+      text: `SHD ×${shieldCharges}`,
+    });
+  }
+
+  const doubleHits = Math.max(0, Math.floor(Number(active.doubleScoreHits) || 0));
+  if (doubleHits > 0) {
+    badges.push({
+      type: 'double',
+      text: `2X ×${doubleHits}`,
+    });
+  }
+
+  return badges;
+}
+
+function drawPowerUpStatus(ctx, state, canvasW) {
+  if (state.phase !== 'playing') return false;
+
+  const badges = getActivePowerUpBadges(state);
+  if (badges.length === 0) return false;
+
+  const gap = 7;
+  const h = 22;
+
+  ctx.save();
+  ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
+
+  const widths = badges.map(({ text }) => Math.ceil(ctx.measureText(text).width) + 18);
+  const totalW = widths.reduce((sum, w) => sum + w, 0) + gap * (badges.length - 1);
+  let x = canvasW / 2 - totalW / 2;
+  const y = 145;
+
+  badges.forEach((badge, index) => {
+    const w = widths[index];
+    const color = POWER_UP_CONFIG.colors[badge.type] ?? '#FFFFFF';
+
+    roundedRectPath(ctx, x, y, w, h, h / 2);
+    ctx.fillStyle = 'rgba(13,17,23,.78)';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(badge.text, x + w / 2, y + h / 2 + 0.5);
+
+    x += w + gap;
+  });
+
+  ctx.restore();
+  return true;
+}
+
+function drawComboBadge(ctx, state, canvasW, hasPowerUpStatus = false) {
   const combo = state.comboLevel ?? 1;
   if (combo <= 1 || state.phase !== 'playing') return;
 
   const text = `COMBO ×${combo}`;
+  const y = hasPowerUpStatus ? 174 : 145;
+
   ctx.save();
   ctx.font = 'bold 12px "Amazon Ember", Arial, sans-serif';
   const tw = ctx.measureText(text).width;
-  roundedRectPath(ctx, canvasW / 2 - tw / 2 - 12, 145, tw + 24, 27, 14);
+  roundedRectPath(ctx, canvasW / 2 - tw / 2 - 12, y, tw + 24, 27, 14);
   ctx.fillStyle = 'rgba(255,153,0,.16)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(255,153,0,.55)';
@@ -390,7 +499,7 @@ function drawComboBadge(ctx, state, canvasW) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#FFB24D';
-  ctx.fillText(text, canvasW / 2, 158.5);
+  ctx.fillText(text, canvasW / 2, y + 13.5);
   ctx.restore();
 }
 
@@ -513,7 +622,10 @@ function drawReadyArrow(ctx, state, assets, canvasW, canvasH) {
   ctx.globalAlpha = 0.82 + 0.18 * Math.sin(t * Math.PI * 0.8);
   drawArrow(ctx, cx, floatY, r, 0, state.nextArrowId, assets);
   ctx.globalAlpha = 1;
+
+  drawPowerUpMarker(ctx, cx, floatY, r, state.nextPowerUp);
 }
+
 function drawLevelCompleteOverlay(ctx, state) {
   if (state.phase !== 'levelcomplete') return;
 
@@ -586,7 +698,8 @@ export function render(ctx, state, assets, progression = null) {
   }
 
   drawLevelProgress(ctx, state, canvas.width);
-  drawComboBadge(ctx, state, canvas.width);
+  const hasPowerUpStatus = drawPowerUpStatus(ctx, state, canvas.width);
+  drawComboBadge(ctx, state, canvas.width, hasPowerUpStatus);
 
   // Disco
   drawDisc(ctx, ce, progression, state.level);
@@ -611,6 +724,7 @@ export function render(ctx, state, assets, progression = null) {
     const fp = flyingProjectile;
     const flyAngle = Math.atan2(fp.vy, fp.vx) + Math.PI / 2;
     drawArrow(ctx, fp.x, fp.y, fp.radius, flyAngle, fp.awsIconId, assets);
+    drawPowerUpMarker(ctx, fp.x, fp.y, fp.radius, fp.powerUpType);
   }
 
   // Flecha en espera (visible antes de lanzar)

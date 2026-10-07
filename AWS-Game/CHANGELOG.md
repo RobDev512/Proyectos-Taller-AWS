@@ -1,5 +1,22 @@
 # AWS Arcade Game — Changelog
 
+## v1.3.0 — Power-Ups Update
+- Nuevo sistema de Power-Ups disponible a partir del Level 2.
+- Las Power-Up Arrows conservan su icono AWS y muestran un badge especial durante espera y vuelo.
+- **Freeze (FRZ):** pausa la rotación durante 2 segundos de gameplay activo.
+- **Shield (SHD):** absorbe una colisión, descarta el proyectil fallido y reinicia el combo sin provocar Game Over.
+- **Double Score (2X):** duplica Base + Perfect + Combo durante los siguientes 3 aciertos, sin duplicar el bonus de nivel.
+- **Cleanup (CLR):** elimina el proyectil anclado más antiguo cuando existe espacio útil para hacerlo.
+- Probabilidad base de aparición del 16 %, sin Power-Ups consecutivos y con selección únicamente entre efectos útiles.
+- HUD de efectos activos con tiempo/cargas restantes.
+- Feedback visual y sonidos específicos para activaciones y Shield Save.
+- Nuevas estadísticas persistentes: Power-Ups obtenidos y Shield Saves.
+- Compatibilidad automática con estadísticas guardadas de versiones anteriores.
+- Los efectos activos pueden continuar entre niveles; los temporizadores se pausan durante `levelcomplete`.
+- Game Over limpia todos los efectos activos.
+- Versión actualizada a `v1.3.0 - Power-Ups Update`.
+- Se mantiene intacta la hitbox permisiva original (`0.35 × radius`).
+
 ## v1.2.1 — HUD Fix
 - Corregido el solapamiento entre las estrellas de Tier y el texto de progreso de nivel.
 - Mejorado el espaciado vertical del HUD superior.

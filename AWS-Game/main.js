@@ -10,6 +10,7 @@ import { startGameLoop }                     from './gameLoop.js';
 import { hideGameOver }                      from './ui.js';
 import { setSoundEnabled }                   from './sound.js';
 import { setFxEnabled }                      from './particles.js';
+import { setFeedbackFxEnabled }              from './feedback.js';
 import { setComboEnabled }                   from './combo.js';
 import { loadPreferences, savePreferences }  from './preferences.js';
 import { loadStats, getAccuracy }            from './stats.js';
@@ -32,6 +33,8 @@ const perfectShotsStat= document.getElementById('perfectShotsStat');
 const bestComboStat   = document.getElementById('bestComboStat');
 const bestLevelStat   = document.getElementById('bestLevelStat');
 const levelsCompletedStat = document.getElementById('levelsCompletedStat');
+const powerUpsCollectedStat = document.getElementById('powerUpsCollectedStat');
+const shieldSavesStat = document.getElementById('shieldSavesStat');
 
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION} - ${APP_CODENAME}`;
 document.title = `AWS Arcade Game | v${APP_VERSION} - ${APP_CODENAME}`;
@@ -95,6 +98,7 @@ function applyOptions() {
   setSoundEnabled(options.sound);
   setComboEnabled(options.combo);
   setFxEnabled(options.fx);
+  setFeedbackFxEnabled(options.fx);
 }
 applyOptions();
 
@@ -105,6 +109,8 @@ function updateStatsPanel() {
   if (bestComboStat) bestComboStat.textContent = `×${stats.bestCombo}`;
   if (bestLevelStat) bestLevelStat.textContent = String(stats.bestLevel ?? 1);
   if (levelsCompletedStat) levelsCompletedStat.textContent = String(stats.levelsCompleted ?? 0);
+  if (powerUpsCollectedStat) powerUpsCollectedStat.textContent = String(stats.powerUpsCollected ?? 0);
+  if (shieldSavesStat) shieldSavesStat.textContent = String(stats.shieldSaves ?? 0);
 }
 
 // ── startGame ─────────────────────────────────────────────────────────────────

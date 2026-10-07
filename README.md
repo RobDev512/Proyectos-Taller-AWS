@@ -30,6 +30,7 @@ Sin frameworks externos.
 - `aws-game-v1.1.0` — Progression Update
 - `aws-game-v1.2.0` — Level Update
 - `aws-game-v1.2.1` — HUD Fix
+- `aws-game-v1.3.0` — Power-Ups Update
 
 Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
@@ -48,8 +49,8 @@ La versión original fue creada como parte de un reto de desarrollo arcade con t
 
 La mecánica consiste en lanzar proyectiles hacia un elemento central en rotación evitando colisionar con los proyectiles ya colocados.
 
-Posteriormente el proyecto continuó desarrollándose fuera del workshop con nuevas versiones, sistemas de progresión, estadísticas, niveles y otras mejoras.
+Posteriormente el proyecto continuó desarrollándose fuera del workshop con nuevas versiones, sistemas de progresión, estadísticas, niveles, Power-Ups y otras mejoras.
 
 La versión estable publicada actualmente es:
 
-**v1.2.1 - HUD Fix**
+**v1.3.0 - Power-Ups Update**

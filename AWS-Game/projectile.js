@@ -3,8 +3,9 @@
  */
 
 import { incrementScore } from './scoring.js';
-import { randomIcon }     from './state.js';
-import { recordShot }     from './stats.js';
+import { randomIcon } from './state.js';
+import { recordShot } from './stats.js';
+import { rollNextPowerUp } from './powerups.js';
 
 /**
  * @typedef {Object} FlyingProjectile
@@ -14,6 +15,7 @@ import { recordShot }     from './stats.js';
  * @property {number} vy
  * @property {number} radius
  * @property {string} awsIconId
+ * @property {string|null} powerUpType
  */
 
 /**
@@ -32,9 +34,13 @@ export function launchProjectile(state, config) {
   const dy = state.centralElement.y - startY;
   const mag = Math.hypot(dx, dy);
 
-  // Usa el icono que se estaba mostrando en espera, luego prepara el siguiente
+  // Usa el icono y Power-Up que estaban preparados en espera.
   const awsIconId = state.nextArrowId;
+  const powerUpType = state.nextPowerUp;
+
+  // Prepara inmediatamente la siguiente flecha.
   state.nextArrowId = randomIcon();
+  state.nextPowerUp = rollNextPowerUp(state);
 
   state.flyingProjectile = {
     x: startX,
@@ -43,6 +49,7 @@ export function launchProjectile(state, config) {
     vy: (dy / mag) * config.PROJECTILE_SPEED,
     radius: config.PROJECTILE_RADIUS,
     awsIconId,
+    powerUpType,
   };
 
   if (state.stats) recordShot(state.stats);
@@ -52,6 +59,7 @@ export function launchProjectile(state, config) {
 export function advanceProjectile(state, deltaTime) {
   const fp = state.flyingProjectile;
   if (!fp) return;
+
   fp.x += fp.vx * deltaTime;
   fp.y += fp.vy * deltaTime;
 }
@@ -60,13 +68,20 @@ export function anchorProjectile(state) {
   const fp = state.flyingProjectile;
   if (!fp) return;
 
-  const ce    = state.centralElement;
+  const ce = state.centralElement;
   const angle = Math.atan2(fp.y - ce.y, fp.x - ce.x);
+
   // Centro de la flecha = borde del disco + mitad de la flecha
   const HALF_ARROW = fp.radius * 2.1;
-  const distance   = ce.radius + HALF_ARROW;
+  const distance = ce.radius + HALF_ARROW;
 
-  state.anchoredProjectiles.push({ angle, distance, radius: fp.radius, awsIconId: fp.awsIconId });
+  state.anchoredProjectiles.push({
+    angle,
+    distance,
+    radius: fp.radius,
+    awsIconId: fp.awsIconId,
+  });
+
   incrementScore(state);
   state.flyingProjectile = null;
 }
