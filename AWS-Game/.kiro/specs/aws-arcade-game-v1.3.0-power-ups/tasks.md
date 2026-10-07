@@ -147,10 +147,10 @@
   - [x] 16.9 Confirmar responsive
   - [x] 16.10 Confirmar cero errores 404 o excepciones en consola
 
-- [ ] 17. Release
-  - [ ] 17.1 Commit de v1.3.0
-  - [ ] 17.2 Crear tag `aws-game-v1.3.0`
-  - [ ] 17.3 Merge a `main`
-  - [ ] 17.4 Push
-  - [ ] 17.5 Confirmar GitHub Actions
-  - [ ] 17.6 Confirmar GitHub Pages
+- [x] 17. Release
+  - [x] 17.1 Commit de v1.3.0
+  - [x] 17.2 Crear tag `aws-game-v1.3.0`
+  - [x] 17.3 Merge a `main`
+  - [x] 17.4 Push
+  - [x] 17.5 Confirmar GitHub Actions
+  - [x] 17.6 Confirmar GitHub Pages

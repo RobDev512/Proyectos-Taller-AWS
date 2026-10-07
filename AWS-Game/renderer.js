@@ -1,6 +1,15 @@
 import { APP_VERSION, APP_CODENAME } from './config.js';
 import { getLevelTarget, getLevelTheme, LEVEL_COMPLETE_DELAY } from './levels.js';
-import { POWER_UP_CONFIG, isPowerUpType } from './powerups.js';
+import {
+  POWER_UP_CONFIG,
+  POWER_UP_ORDER,
+  canActivateStoredPowerUp,
+} from './powerups.js';
+import {
+  getPowerUpChargeRect,
+  getPowerUpSlotRects,
+} from './powerupUi.js';
+import { getPowerCorePosition } from './powercore.js';
 
 /**
  * renderer.js — AWS Arcade Game
@@ -198,40 +207,6 @@ function drawArrow(ctx, cx, cy, radius, angle, awsIconId, assets) {
   ctx.restore();
 }
 
-// ---------------------------------------------------------------------------
-// Power-Up marker — badge visual adicional; no altera dimensiones ni hitbox.
-// ---------------------------------------------------------------------------
-function drawPowerUpMarker(ctx, x, y, radius, type) {
-  if (!isPowerUpType(type)) return;
-
-  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
-  const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
-  const badgeR = Math.max(9, radius * 0.52);
-  const bx = x + radius * 0.92;
-  const by = y - radius * 1.18;
-
-  ctx.save();
-
-  ctx.beginPath();
-  ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 9;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  ctx.strokeStyle = 'rgba(255,255,255,.86)';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `bold ${Math.max(7, Math.floor(badgeR * 0.78))}px "Amazon Ember", Arial, sans-serif`;
-  ctx.fillStyle = '#0E1824';
-  ctx.fillText(label, bx, by + 0.5);
-
-  ctx.restore();
-}
 
 // ---------------------------------------------------------------------------
 // drawTierIndicator — fila de estrellas que indica el tier de progresión
@@ -409,97 +384,287 @@ function drawLevelProgress(ctx, state, canvasW) {
   ctx.restore();
 }
 
-function getActivePowerUpBadges(state) {
+function getActiveStatus(state, type) {
   const active = state.activePowerUps ?? {};
-  const badges = [];
 
-  const freezeTimer = Number(active.freezeTimer);
-  if (Number.isFinite(freezeTimer) && freezeTimer > 0) {
-    badges.push({
-      type: 'freeze',
-      text: `FRZ ${freezeTimer.toFixed(1)}s`,
-    });
+  switch (type) {
+    case 'freeze': {
+      const timer = Number(active.freezeTimer);
+      return timer > 0 ? `${timer.toFixed(1)}s` : '';
+    }
+
+    case 'shield':
+      return Number(active.shieldCharges) > 0
+        ? 'ARMED'
+        : '';
+
+    case 'double': {
+      const hits = Math.max(
+        0,
+        Math.floor(Number(active.doubleScoreHits) || 0),
+      );
+      return hits > 0 ? `${hits} HITS` : '';
+    }
+
+    default:
+      return '';
   }
-
-  const shieldCharges = Math.max(0, Math.floor(Number(active.shieldCharges) || 0));
-  if (shieldCharges > 0) {
-    badges.push({
-      type: 'shield',
-      text: `SHD ×${shieldCharges}`,
-    });
-  }
-
-  const doubleHits = Math.max(0, Math.floor(Number(active.doubleScoreHits) || 0));
-  if (doubleHits > 0) {
-    badges.push({
-      type: 'double',
-      text: `2X ×${doubleHits}`,
-    });
-  }
-
-  return badges;
 }
 
-function drawPowerUpStatus(ctx, state, canvasW) {
-  if (state.phase !== 'playing') return false;
+function drawPowerUpDock(ctx, state, canvasW) {
+  if (state.phase !== 'playing') return;
 
-  const badges = getActivePowerUpBadges(state);
-  if (badges.length === 0) return false;
-
-  const gap = 7;
-  const h = 22;
+  const slots = getPowerUpSlotRects(canvasW);
+  const inventory = state.powerUpInventory ?? {};
+  const chargeRect = getPowerUpChargeRect(canvasW);
+  const hovered = state.hoveredPowerUpSlot ?? null;
 
   ctx.save();
-  ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
 
-  const widths = badges.map(({ text }) => Math.ceil(ctx.measureText(text).width) + 18);
-  const totalW = widths.reduce((sum, w) => sum + w, 0) + gap * (badges.length - 1);
-  let x = canvasW / 2 - totalW / 2;
-  const y = 145;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.52)';
+  ctx.fillText(
+    'POWER-UPS • CLICK / 1–4',
+    slots[0].x + slots[0].width / 2,
+    slots[0].y - 13,
+  );
 
-  badges.forEach((badge, index) => {
-    const w = widths[index];
-    const color = POWER_UP_CONFIG.colors[badge.type] ?? '#FFFFFF';
+  for (const slot of slots) {
+    const type = slot.type;
+    const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+    const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
+    const name = POWER_UP_CONFIG.names[type] ?? type.toUpperCase();
+    const shortcut = POWER_UP_CONFIG.shortcuts[type] ?? '?';
+    const count = Math.max(
+      0,
+      Math.floor(Number(inventory[type]) || 0),
+    );
+    const status = getActiveStatus(state, type);
+    const activatable = canActivateStoredPowerUp(state, type);
+    const occupied = count > 0 || Boolean(status);
+    const isHovered = hovered === type;
 
-    roundedRectPath(ctx, x, y, w, h, h / 2);
-    ctx.fillStyle = 'rgba(13,17,23,.78)';
+    ctx.save();
+    ctx.globalAlpha = occupied ? 1 : 0.5;
+
+    roundedRectPath(
+      ctx,
+      slot.x,
+      slot.y,
+      slot.width,
+      slot.height,
+      12,
+    );
+
+    ctx.fillStyle = activatable
+      ? 'rgba(13,17,23,.95)'
+      : isHovered
+        ? 'rgba(13,17,23,.78)'
+        : 'rgba(13,17,23,.68)';
     ctx.fill();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.2;
+
+    ctx.strokeStyle = occupied
+      ? color
+      : 'rgba(255,255,255,.14)';
+    ctx.lineWidth = activatable || isHovered ? 2.1 : 1.1;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = activatable || isHovered ? 12 : 0;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Burbuja de atajo 1–4.
+    ctx.beginPath();
+    ctx.arc(
+      slot.x + 18,
+      slot.y + 19,
+      11,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fillStyle = occupied
+      ? `${color}D0`
+      : 'rgba(255,255,255,.08)';
+    ctx.fill();
+
+    ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
+    ctx.fillStyle = '#0E1824';
+    ctx.textAlign = 'center';
+    ctx.fillText(shortcut, slot.x + 18, slot.y + 19.5);
+
+    // Título del botón.
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
+    ctx.fillStyle = occupied ? color : 'rgba(255,255,255,.52)';
+    ctx.fillText(label, slot.x + 35, slot.y + 16);
+
+    ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
+    ctx.fillStyle = occupied ? '#FFFFFF' : 'rgba(255,255,255,.46)';
+    ctx.fillText(name, slot.x + 35, slot.y + 29);
+
+    // Estado.
+    let subtitle = status;
+    if (!subtitle && count > 0) {
+      subtitle =
+        type === 'cleanup' &&
+        !(state.anchoredProjectiles?.length > 0)
+          ? 'WAIT FOR TARGET'
+          : 'READY';
+    }
+    if (!subtitle) subtitle = 'EMPTY';
+
+    ctx.font = 'bold 8px "Amazon Ember", Arial, sans-serif';
+    ctx.fillStyle = status
+      ? color
+      : 'rgba(255,255,255,.54)';
+    ctx.fillText(subtitle, slot.x + 35, slot.y + 43);
+
+    // Badge de cantidad a la derecha.
+    const badgeW = 26;
+    const badgeH = 18;
+    const badgeX = slot.x + slot.width - badgeW - 7;
+    const badgeY = slot.y + 8;
+
+    roundedRectPath(ctx, badgeX, badgeY, badgeW, badgeH, 9);
+    ctx.fillStyle = count > 0
+      ? `${color}26`
+      : 'rgba(255,255,255,.06)';
+    ctx.fill();
+    ctx.strokeStyle = count > 0
+      ? `${color}AA`
+      : 'rgba(255,255,255,.10)';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = color;
-    ctx.fillText(badge.text, x + w / 2, y + h / 2 + 0.5);
+    ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
+    ctx.fillStyle = count > 0 ? '#FFFFFF' : 'rgba(255,255,255,.35)';
+    ctx.fillText(`×${count}`, badgeX + badgeW / 2, badgeY + badgeH / 2 + 0.5);
 
-    x += w + gap;
-  });
+    ctx.restore();
+  }
+
+  // Power Charge.
+  const charge = Math.min(
+    POWER_UP_CONFIG.chargeMax,
+    Math.max(0, Number(state.powerUpCharge) || 0),
+  );
+  const ratio = charge / POWER_UP_CONFIG.chargeMax;
+
+  roundedRectPath(
+    ctx,
+    chargeRect.x,
+    chargeRect.y,
+    chargeRect.width,
+    chargeRect.height,
+    12,
+  );
+  ctx.fillStyle = 'rgba(13,17,23,.72)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,153,0,.30)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFB24D';
+  ctx.fillText(
+    'POWER CHARGE',
+    chargeRect.x + 9,
+    chargeRect.y + 15,
+  );
+
+  ctx.textAlign = 'right';
+  ctx.font = 'bold 8px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.66)';
+  ctx.fillText(
+    state.level < POWER_UP_CONFIG.minLevel
+      ? `LV ${POWER_UP_CONFIG.minLevel}`
+      : `${Math.round(charge)}%`,
+    chargeRect.x + chargeRect.width - 9,
+    chargeRect.y + 15,
+  );
+
+  const barX = chargeRect.x + 9;
+  const barY = chargeRect.y + 26;
+  const barW = chargeRect.width - 18;
+  const barH = 10;
+
+  roundedRectPath(ctx, barX, barY, barW, barH, 5);
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  ctx.fill();
+
+  if (ratio > 0) {
+    roundedRectPath(
+      ctx,
+      barX,
+      barY,
+      Math.max(barH, barW * ratio),
+      barH,
+      5,
+    );
+    ctx.fillStyle = '#FF9900';
+    ctx.shadowColor = '#FF9900';
+    ctx.shadowBlur = ratio >= 1 ? 10 : 5;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 8px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.50)';
+  const coreActive = Boolean(state.powerCore?.active);
+  const coreType = state.powerCore?.currentType;
+  const coreColor = coreType
+    ? POWER_UP_CONFIG.colors[coreType] ?? '#FF9900'
+    : '#FF9900';
+
+  ctx.fillStyle = coreActive
+    ? coreColor
+    : 'rgba(255,255,255,.50)';
+
+  ctx.fillText(
+    state.level < POWER_UP_CONFIG.minLevel
+      ? 'LOCKED'
+      : coreActive
+        ? `CORE ACTIVE • ${POWER_UP_CONFIG.labels[coreType] ?? 'PU'}`
+        : charge >= POWER_UP_CONFIG.chargeMax
+          ? 'CORE WAITING FOR FREE SLOT'
+          : 'EARN POWER BY PLAYING WELL',
+    chargeRect.x + 9,
+    chargeRect.y + 46,
+  );
 
   ctx.restore();
-  return true;
 }
 
-function drawComboBadge(ctx, state, canvasW, hasPowerUpStatus = false) {
+function drawComboBadge(ctx, state) {
   const combo = state.comboLevel ?? 1;
   if (combo <= 1 || state.phase !== 'playing') return;
 
   const text = `COMBO ×${combo}`;
-  const y = hasPowerUpStatus ? 174 : 145;
+  const x = 22;
+  const y = 104;
 
   ctx.save();
-  ctx.font = 'bold 12px "Amazon Ember", Arial, sans-serif';
+  ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
+
   const tw = ctx.measureText(text).width;
-  roundedRectPath(ctx, canvasW / 2 - tw / 2 - 12, y, tw + 24, 27, 14);
-  ctx.fillStyle = 'rgba(255,153,0,.16)';
+  const w = Math.max(84, tw + 22);
+
+  roundedRectPath(ctx, x, y, w, 24, 12);
+  ctx.fillStyle = 'rgba(255,153,0,.13)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255,153,0,.55)';
+  ctx.strokeStyle = 'rgba(255,153,0,.48)';
   ctx.lineWidth = 1;
   ctx.stroke();
+
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#FFB24D';
-  ctx.fillText(text, canvasW / 2, y + 13.5);
+  ctx.fillText(text, x + w / 2, y + 12.5);
+
   ctx.restore();
 }
 
@@ -509,8 +674,16 @@ function drawBottomHint(ctx, state, canvasW, canvasH) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = '11px "Amazon Ember", Arial, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.43)';
-  ctx.fillText('CLIC O ESPACIO PARA LANZAR', canvasW / 2, canvasH - 18);
+  ctx.fillStyle = state.powerCore?.active
+    ? 'rgba(255,184,77,.72)'
+    : 'rgba(255,255,255,.43)';
+  ctx.fillText(
+    state.powerCore?.active
+      ? 'POWER CORE: ATRAVIÉSALO Y ANCLA  •  POWER-UPS: CLIC O 1–4'
+      : 'CLIC/ESPACIO: LANZAR  •  POWER-UPS: CLIC O 1–4',
+    canvasW / 2,
+    canvasH - 18,
+  );
   ctx.restore();
 }
 
@@ -530,6 +703,104 @@ export function drawGameOverFlash(ctx, flashTimer) {
   ctx.save();
   ctx.fillStyle = `rgba(255,70,70,${alpha})`;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Power Core — recompensa orbitante que debe atravesarse con un tiro válido.
+// ---------------------------------------------------------------------------
+function drawPowerCore(ctx, state) {
+  const position = getPowerCorePosition(state);
+  if (!position) return;
+
+  const type = position.type;
+  const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+  const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
+  const name = POWER_UP_CONFIG.names[type] ?? 'POWER';
+  const pulse = state.powerCore?.pulse ?? 0;
+  const pulseScale = 1 + Math.sin(pulse * 7) * 0.08;
+
+  ctx.save();
+
+  // Órbita guía tenue.
+  ctx.beginPath();
+  ctx.arc(
+    state.centralElement.x,
+    state.centralElement.y,
+    position.orbitRadius,
+    0,
+    Math.PI * 2,
+  );
+  ctx.setLineDash([5, 8]);
+  ctx.strokeStyle = `${color}28`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Halo exterior.
+  ctx.beginPath();
+  ctx.arc(
+    position.x,
+    position.y,
+    (position.radius + 8) * pulseScale,
+    0,
+    Math.PI * 2,
+  );
+  ctx.strokeStyle = `${color}70`;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Núcleo.
+  ctx.beginPath();
+  ctx.arc(
+    position.x,
+    position.y,
+    position.radius * pulseScale,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = 'rgba(13,17,23,.94)';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 12;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Punto energético central.
+  ctx.beginPath();
+  ctx.arc(
+    position.x,
+    position.y,
+    Math.max(4, position.radius * 0.35),
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 8px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText(
+    label,
+    position.x,
+    position.y + position.radius + 13,
+  );
+
+  ctx.font = 'bold 7px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = color;
+  ctx.fillText(
+    name,
+    position.x,
+    position.y + position.radius + 23,
+  );
+
   ctx.restore();
 }
 
@@ -623,7 +894,6 @@ function drawReadyArrow(ctx, state, assets, canvasW, canvasH) {
   drawArrow(ctx, cx, floatY, r, 0, state.nextArrowId, assets);
   ctx.globalAlpha = 1;
 
-  drawPowerUpMarker(ctx, cx, floatY, r, state.nextPowerUp);
 }
 
 function drawLevelCompleteOverlay(ctx, state) {
@@ -698,8 +968,8 @@ export function render(ctx, state, assets, progression = null) {
   }
 
   drawLevelProgress(ctx, state, canvas.width);
-  const hasPowerUpStatus = drawPowerUpStatus(ctx, state, canvas.width);
-  drawComboBadge(ctx, state, canvas.width, hasPowerUpStatus);
+  drawComboBadge(ctx, state);
+  drawPowerUpDock(ctx, state, canvas.width);
 
   // Disco
   drawDisc(ctx, ce, progression, state.level);
@@ -719,12 +989,14 @@ export function render(ctx, state, assets, progression = null) {
     drawArrow(ctx, apX, apY, ap.radius, arrowAngle, ap.awsIconId, assets);
   }
 
+  // Power Core orbitante. La flecha debe atravesarlo y después anclarse.
+  drawPowerCore(ctx, state);
+
   // Proyectil en vuelo
   if (flyingProjectile) {
     const fp = flyingProjectile;
     const flyAngle = Math.atan2(fp.vy, fp.vx) + Math.PI / 2;
     drawArrow(ctx, fp.x, fp.y, fp.radius, flyAngle, fp.awsIconId, assets);
-    drawPowerUpMarker(ctx, fp.x, fp.y, fp.radius, fp.powerUpType);
   }
 
   // Flecha en espera (visible antes de lanzar)

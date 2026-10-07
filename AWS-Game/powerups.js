@@ -1,8 +1,9 @@
 /**
- * powerups.js — Sistema de Power-Ups de AWS Arcade Game.
+ * powerups.js — Inventario y efectos de Power-Ups.
  *
- * Contiene tipos, configuración, helpers de estado, generación
- * probabilística y lógica de efectos activos.
+ * Desde v1.3.2 los Power-Ups ya no llegan gratis mediante flechas especiales.
+ * El jugador llena Power Charge, captura un Power Core con un tiro válido y
+ * después decide cuándo activar la recompensa desde el Power-Up Dock.
  */
 
 export const POWER_UP_TYPES = Object.freeze({
@@ -12,13 +13,28 @@ export const POWER_UP_TYPES = Object.freeze({
   CLEANUP: 'cleanup',
 });
 
+export const POWER_UP_ORDER = Object.freeze([
+  POWER_UP_TYPES.FREEZE,
+  POWER_UP_TYPES.SHIELD,
+  POWER_UP_TYPES.DOUBLE,
+  POWER_UP_TYPES.CLEANUP,
+]);
+
 export const POWER_UP_CONFIG = Object.freeze({
   minLevel: 2,
-  spawnChance: 0.16,
 
   freezeDuration: 2.0,
   shieldMaxCharges: 1,
   doubleScoreHits: 3,
+
+  inventoryMaxPerType: 2,
+
+  // Power Charge — v1.3.2
+  chargeMax: 100,
+  chargePerHit: 12,
+  perfectChargeBonus: 14,
+  comboChargeStep: 4,
+  levelCompleteCharge: 20,
 
   colors: Object.freeze({
     freeze: '#36C5F0',
@@ -33,13 +49,24 @@ export const POWER_UP_CONFIG = Object.freeze({
     double: '2X',
     cleanup: 'CLR',
   }),
+
+  names: Object.freeze({
+    freeze: 'FREEZE',
+    shield: 'SHIELD',
+    double: 'DOUBLE',
+    cleanup: 'CLEANUP',
+  }),
+
+  shortcuts: Object.freeze({
+    freeze: '1',
+    shield: '2',
+    double: '3',
+    cleanup: '4',
+  }),
 });
 
-const VALID_POWER_UP_TYPES = new Set(Object.values(POWER_UP_TYPES));
+const VALID_POWER_UP_TYPES = new Set(POWER_UP_ORDER);
 
-/**
- * Crea el estado limpio de efectos activos.
- */
 export function createActivePowerUps() {
   return {
     freezeTimer: 0,
@@ -48,29 +75,31 @@ export function createActivePowerUps() {
   };
 }
 
-/**
- * Indica si un valor representa un tipo de Power-Up válido.
- *
- * @param {unknown} type
- * @returns {boolean}
- */
+export function createPowerUpInventory() {
+  return {
+    freeze: 0,
+    shield: 0,
+    double: 0,
+    cleanup: 0,
+  };
+}
+
 export function isPowerUpType(type) {
   return VALID_POWER_UP_TYPES.has(type);
 }
 
-/**
- * Normaliza el estado relacionado con Power-Ups.
- *
- * Sirve como protección frente a valores inválidos o estados antiguos
- * creados antes de v1.3.0.
- *
- * @param {Object} state
- * @returns {Object}
- */
+function sanitizeCount(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+
+  return Math.min(
+    POWER_UP_CONFIG.inventoryMaxPerType,
+    Math.max(0, Math.floor(n)),
+  );
+}
+
 export function sanitizePowerUpState(state) {
-  if (!state || typeof state !== 'object') {
-    return state;
-  }
+  if (!state || typeof state !== 'object') return state;
 
   const active =
     state.activePowerUps && typeof state.activePowerUps === 'object'
@@ -104,170 +133,139 @@ export function sanitizePowerUpState(state) {
         : 0,
   };
 
-  if (!isPowerUpType(state.nextPowerUp)) {
-    state.nextPowerUp = null;
+  const inventory =
+    state.powerUpInventory && typeof state.powerUpInventory === 'object'
+      ? state.powerUpInventory
+      : {};
+
+  state.powerUpInventory = createPowerUpInventory();
+  for (const type of POWER_UP_ORDER) {
+    state.powerUpInventory[type] = sanitizeCount(inventory[type]);
   }
 
-  state.lastPreparedWasPowerUp =
-    Boolean(state.lastPreparedWasPowerUp);
+  const charge = Number(state.powerUpCharge);
+  state.powerUpCharge = Number.isFinite(charge)
+    ? Math.min(POWER_UP_CONFIG.chargeMax, Math.max(0, charge))
+    : 0;
 
-  return state;
-}
+  state.pendingPowerUpActivation = isPowerUpType(
+    state.pendingPowerUpActivation,
+  )
+    ? state.pendingPowerUpActivation
+    : null;
 
-/**
- * Restablece completamente los Power-Ups de una partida.
- *
- * No toca score, nivel, dificultad, estadísticas ni ningún otro
- * sistema del juego.
- *
- * @param {Object} state
- * @returns {Object}
- */
-export function resetPowerUps(state) {
-  if (!state || typeof state !== 'object') {
-    return state;
-  }
-
+  // Compatibilidad con estados temporales de v1.3.0/v1.3.1.
   state.nextPowerUp = null;
-  state.activePowerUps = createActivePowerUps();
   state.lastPreparedWasPowerUp = false;
 
   return state;
 }
 
-/**
- * Devuelve los Power-Ups que tienen sentido para el estado actual.
- *
- * Freeze, Shield y Double Score se excluyen mientras su efecto
- * correspondiente ya esté activo. Cleanup solamente puede aparecer
- * cuando existen al menos dos proyectiles anclados.
- *
- * @param {Object} state
- * @returns {string[]}
- */
-export function getEligiblePowerUps(state) {
-  if (!state || typeof state !== 'object') {
-    return [];
-  }
+export function resetPowerUps(state) {
+  if (!state || typeof state !== 'object') return state;
 
-  const active =
-    state.activePowerUps && typeof state.activePowerUps === 'object'
-      ? state.activePowerUps
-      : createActivePowerUps();
+  state.nextPowerUp = null;
+  state.activePowerUps = createActivePowerUps();
+  state.powerUpInventory = createPowerUpInventory();
+  state.powerUpCharge = 0;
+  state.pendingPowerUpActivation = null;
+  state.lastPreparedWasPowerUp = false;
 
-  const eligible = [];
-
-  if (!(Number(active.freezeTimer) > 0)) {
-    eligible.push(POWER_UP_TYPES.FREEZE);
-  }
-
-  if (!(Number(active.shieldCharges) > 0)) {
-    eligible.push(POWER_UP_TYPES.SHIELD);
-  }
-
-  if (!(Number(active.doubleScoreHits) > 0)) {
-    eligible.push(POWER_UP_TYPES.DOUBLE);
-  }
-
-  if (
-    Array.isArray(state.anchoredProjectiles) &&
-    state.anchoredProjectiles.length >= 2
-  ) {
-    eligible.push(POWER_UP_TYPES.CLEANUP);
-  }
-
-  return eligible;
+  return state;
 }
 
-/**
- * Decide qué Power-Up, si alguno, tendrá la siguiente flecha preparada.
- *
- * Reglas:
- * - No hay Power-Ups antes del Level 2.
- * - Nunca se preparan dos Power-Up Arrows consecutivas.
- * - La probabilidad base es 16 %.
- * - Solo se seleccionan Power-Ups elegibles.
- *
- * La función actualiza `lastPreparedWasPowerUp` para que el siguiente
- * roll pueda aplicar correctamente la regla anti-consecutivos.
- *
- * @param {Object} state
- * @param {Function} randomFn Función RNG; Math.random por defecto.
- * @returns {string|null}
- */
-export function rollNextPowerUp(state, randomFn = Math.random) {
-  if (!state || typeof state !== 'object') {
-    return null;
-  }
+export function getStorablePowerUps(state) {
+  if (!state || typeof state !== 'object') return [];
 
-  const level = Number.isFinite(Number(state.level))
-    ? Math.max(1, Math.floor(Number(state.level)))
-    : 1;
+  const inventory =
+    state.powerUpInventory && typeof state.powerUpInventory === 'object'
+      ? state.powerUpInventory
+      : createPowerUpInventory();
 
-  if (level < POWER_UP_CONFIG.minLevel) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  if (state.lastPreparedWasPowerUp) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  const rng = typeof randomFn === 'function' ? randomFn : Math.random;
-  const roll = Number(rng());
-
-  if (!Number.isFinite(roll) || roll >= POWER_UP_CONFIG.spawnChance) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  const eligible = getEligiblePowerUps(state);
-
-  if (eligible.length === 0) {
-    state.lastPreparedWasPowerUp = false;
-    return null;
-  }
-
-  const selectionRoll = Number(rng());
-  const normalizedSelection = Number.isFinite(selectionRoll)
-    ? Math.min(Math.max(selectionRoll, 0), 0.9999999999999999)
-    : 0;
-
-  const index = Math.floor(normalizedSelection * eligible.length);
-  const selected = eligible[index];
-
-  state.lastPreparedWasPowerUp = true;
-  return selected;
-}
-
-/**
- * Indica si Freeze está activo.
- *
- * @param {Object} state
- * @returns {boolean}
- */
-export function isFreezeActive(state) {
-  return Boolean(
-    state &&
-    state.activePowerUps &&
-    Number(state.activePowerUps.freezeTimer) > 0
+  return POWER_UP_ORDER.filter(
+    type =>
+      sanitizeCount(inventory[type]) <
+      POWER_UP_CONFIG.inventoryMaxPerType,
   );
 }
 
 /**
- * Activa un Power-Up.
- *
- * Cleanup elimina el Anchored Projectile más antiguo, pero únicamente
- * cuando la Power-Up Arrow recién anclada tiene al menos dos proyectiles
- * anteriores disponibles. La propia Cleanup Arrow permanece anclada.
- *
- * @param {Object} state
- * @param {string|null} type
- * @returns {{type:string|null, activated:boolean, removedProjectile:null}}
+ * Compatibilidad con código anterior. Ya no se generan Power-Up Arrows.
  */
-export function activatePowerUp(state, type) {
-  if (!state || typeof state !== 'object' || !isPowerUpType(type)) {
+export function getEligiblePowerUps(state) {
+  return getStorablePowerUps(state);
+}
+
+/**
+ * v1.3.2: las flechas normales nunca llevan Power-Up automáticamente.
+ */
+export function rollNextPowerUp() {
+  return null;
+}
+
+/**
+ * Guarda una recompensa capturada en el inventario.
+ */
+export function collectPowerUp(state, type) {
+  if (!state || !isPowerUpType(type)) {
+    return {
+      type: isPowerUpType(type) ? type : null,
+      collected: false,
+      count: 0,
+    };
+  }
+
+  sanitizePowerUpState(state);
+
+  const current = state.powerUpInventory[type];
+  if (current >= POWER_UP_CONFIG.inventoryMaxPerType) {
+    return {
+      type,
+      collected: false,
+      count: current,
+    };
+  }
+
+  state.powerUpInventory[type] = current + 1;
+
+  return {
+    type,
+    collected: true,
+    count: state.powerUpInventory[type],
+  };
+}
+
+export function canActivateStoredPowerUp(state, type) {
+  if (!state || !isPowerUpType(type)) return false;
+
+  const inventory = state.powerUpInventory ?? {};
+  if ((Number(inventory[type]) || 0) <= 0) return false;
+
+  const active = state.activePowerUps ?? {};
+
+  switch (type) {
+    case POWER_UP_TYPES.FREEZE:
+      return !(Number(active.freezeTimer) > 0);
+
+    case POWER_UP_TYPES.SHIELD:
+      return !(Number(active.shieldCharges) > 0);
+
+    case POWER_UP_TYPES.DOUBLE:
+      return !(Number(active.doubleScoreHits) > 0);
+
+    case POWER_UP_TYPES.CLEANUP:
+      return (
+        Array.isArray(state.anchoredProjectiles) &&
+        state.anchoredProjectiles.length > 0
+      );
+
+    default:
+      return false;
+  }
+}
+
+export function activateStoredPowerUp(state, type) {
+  if (!canActivateStoredPowerUp(state, type)) {
     return {
       type: isPowerUpType(type) ? type : null,
       activated: false,
@@ -275,12 +273,8 @@ export function activatePowerUp(state, type) {
     };
   }
 
-  if (
-    !state.activePowerUps ||
-    typeof state.activePowerUps !== 'object'
-  ) {
-    state.activePowerUps = createActivePowerUps();
-  }
+  sanitizePowerUpState(state);
+  state.powerUpInventory[type] -= 1;
 
   switch (type) {
     case POWER_UP_TYPES.FREEZE:
@@ -299,25 +293,12 @@ export function activatePowerUp(state, type) {
       break;
 
     case POWER_UP_TYPES.CLEANUP: {
-      const anchored = Array.isArray(state.anchoredProjectiles)
-        ? state.anchoredProjectiles
-        : [];
-
-      // La Cleanup Arrow ya está al final del array. Para respetar la
-      // elegibilidad original deben existir al menos dos flechas previas.
-      if (anchored.length < 3) {
-        return {
-          type,
-          activated: false,
-          removedProjectile: null,
-        };
-      }
-
-      const removedProjectile = anchored.shift();
+      const removedProjectile =
+        state.anchoredProjectiles.shift() ?? null;
 
       return {
         type,
-        activated: true,
+        activated: removedProjectile !== null,
         removedProjectile,
       };
     }
@@ -338,15 +319,43 @@ export function activatePowerUp(state, type) {
 }
 
 /**
- * Actualiza los efectos activos basados en tiempo.
- *
- * Debe invocarse únicamente durante `phase === 'playing'`.
- * De esta forma Freeze queda pausado durante levelcomplete,
- * idle y gameover.
- *
- * @param {Object} state
- * @param {number} deltaTime Segundos transcurridos.
+ * Añade Power Charge. Llegar a 100 NO regala un Power-Up: únicamente deja
+ * el medidor listo para generar un Power Core desde powercore.js.
  */
+export function addPowerUpCharge(state, amount) {
+  if (!state || typeof state !== 'object') {
+    return { before: 0, after: 0, added: 0, becameReady: false };
+  }
+
+  sanitizePowerUpState(state);
+
+  const safeAmount = Math.max(0, Number(amount) || 0);
+  const before = state.powerUpCharge;
+  const after = Math.min(
+    POWER_UP_CONFIG.chargeMax,
+    before + safeAmount,
+  );
+
+  state.powerUpCharge = after;
+
+  return {
+    before,
+    after,
+    added: after - before,
+    becameReady:
+      before < POWER_UP_CONFIG.chargeMax &&
+      after >= POWER_UP_CONFIG.chargeMax,
+  };
+}
+
+export function isFreezeActive(state) {
+  return Boolean(
+    state &&
+    state.activePowerUps &&
+    Number(state.activePowerUps.freezeTimer) > 0
+  );
+}
+
 export function updatePowerUps(state, deltaTime) {
   if (
     !state ||
@@ -358,9 +367,7 @@ export function updatePowerUps(state, deltaTime) {
   }
 
   const dt = Number(deltaTime);
-  if (!Number.isFinite(dt) || dt <= 0) {
-    return;
-  }
+  if (!Number.isFinite(dt) || dt <= 0) return;
 
   const freezeTimer = Number(state.activePowerUps.freezeTimer);
 
@@ -370,12 +377,6 @@ export function updatePowerUps(state, deltaTime) {
       : 0;
 }
 
-/**
- * Consume un Shield Charge.
- *
- * @param {Object} state
- * @returns {boolean} true cuando una carga fue consumida.
- */
 export function consumeShield(state) {
   if (
     !state ||
@@ -389,12 +390,6 @@ export function consumeShield(state) {
   return true;
 }
 
-/**
- * Indica si Double Score está activo.
- *
- * @param {Object} state
- * @returns {boolean}
- */
 export function isDoubleScoreActive(state) {
   return Boolean(
     state &&
@@ -403,12 +398,6 @@ export function isDoubleScoreActive(state) {
   );
 }
 
-/**
- * Consume un hit de Double Score.
- *
- * @param {Object} state
- * @returns {number} Hits restantes.
- */
 export function consumeDoubleScoreHit(state) {
   if (
     !state ||

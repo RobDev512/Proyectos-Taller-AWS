@@ -5,7 +5,6 @@
 import { incrementScore } from './scoring.js';
 import { randomIcon } from './state.js';
 import { recordShot } from './stats.js';
-import { rollNextPowerUp } from './powerups.js';
 
 /**
  * @typedef {Object} FlyingProjectile
@@ -15,7 +14,7 @@ import { rollNextPowerUp } from './powerups.js';
  * @property {number} vy
  * @property {number} radius
  * @property {string} awsIconId
- * @property {string|null} powerUpType
+ * @property {string|null} powerCoreHitType
  */
 
 /**
@@ -28,19 +27,19 @@ import { rollNextPowerUp } from './powerups.js';
 
 export function launchProjectile(state, config) {
   const startX = config.CANVAS_WIDTH / 2;
-  const startY = config.CANVAS_HEIGHT - config.PROJECTILE_RADIUS * 6;
+  const startY =
+    config.CANVAS_HEIGHT - config.PROJECTILE_RADIUS * 6;
 
   const dx = state.centralElement.x - startX;
   const dy = state.centralElement.y - startY;
   const mag = Math.hypot(dx, dy);
 
-  // Usa el icono y Power-Up que estaban preparados en espera.
   const awsIconId = state.nextArrowId;
-  const powerUpType = state.nextPowerUp;
-
-  // Prepara inmediatamente la siguiente flecha.
   state.nextArrowId = randomIcon();
-  state.nextPowerUp = rollNextPowerUp(state);
+
+  // v1.3.2 elimina las Power-Up Arrows: todas las flechas vuelven a ser
+  // normales y el Power Core se captura mediante timing.
+  state.nextPowerUp = null;
 
   state.flyingProjectile = {
     x: startX,
@@ -49,7 +48,7 @@ export function launchProjectile(state, config) {
     vy: (dy / mag) * config.PROJECTILE_SPEED,
     radius: config.PROJECTILE_RADIUS,
     awsIconId,
-    powerUpType,
+    powerCoreHitType: null,
   };
 
   if (state.stats) recordShot(state.stats);
@@ -71,7 +70,7 @@ export function anchorProjectile(state) {
   const ce = state.centralElement;
   const angle = Math.atan2(fp.y - ce.y, fp.x - ce.x);
 
-  // Centro de la flecha = borde del disco + mitad de la flecha
+  // Centro de la flecha = borde del disco + mitad de la flecha.
   const HALF_ARROW = fp.radius * 2.1;
   const distance = ce.radius + HALF_ARROW;
 

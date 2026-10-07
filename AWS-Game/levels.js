@@ -95,6 +95,7 @@ export function advanceToNextLevel(state) {
   // por ejemplo, un Cleanup que dejó de ser útil al vaciar el disco.
   // Los efectos activos (Freeze, Shield y Double Score) sí se conservan.
   state.nextPowerUp = null;
+  state.pendingPowerUpActivation = null;
   state.lastPreparedWasPowerUp = false;
 
   const diff = DIFFICULTIES[state.difficulty] ?? DIFFICULTIES.medium;

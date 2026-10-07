@@ -126,6 +126,52 @@ export function playSoundPowerUp(type) {
   }
 }
 
+
+/** Power Core aparece al llegar a 100 % de carga. */
+export function playSoundPowerCoreSpawn() {
+  beep({ type: 'sine', freq: 520, freq2: 920, duration: 0.20, gain: 0.16 });
+  beep({ type: 'triangle', freq: 780, freq2: 1240, duration: 0.22, gain: 0.11, delay: 0.08 });
+}
+
+/** La flecha atravesó el Core; todavía debe anclarse. */
+export function playSoundPowerCoreLock(type) {
+  const base = {
+    freeze: 760,
+    shield: 620,
+    double: 900,
+    cleanup: 560,
+  }[type] ?? 700;
+
+  beep({ type: 'square', freq: base, freq2: base * 1.18, duration: 0.07, gain: 0.10 });
+  beep({ type: 'sine', freq: base * 1.4, duration: 0.10, gain: 0.09, delay: 0.04 });
+}
+
+/** Sonido breve cuando un Power-Up entra al inventario. */
+export function playSoundPowerUpCollect(type) {
+  const base = {
+    freeze: 760,
+    shield: 620,
+    double: 880,
+    cleanup: 540,
+  }[type] ?? 660;
+
+  beep({
+    type: 'sine',
+    freq: base,
+    freq2: base * 1.28,
+    duration: 0.13,
+    gain: 0.14,
+  });
+
+  beep({
+    type: 'triangle',
+    freq: base * 1.35,
+    duration: 0.12,
+    gain: 0.10,
+    delay: 0.07,
+  });
+}
+
 /** Confirmación especial cuando Shield absorbe una colisión. */
 export function playSoundShieldSave() {
   beep({ type: 'square', freq: 180, freq2: 90, duration: 0.09, gain: 0.16 });
