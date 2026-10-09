@@ -10,19 +10,32 @@
 import {
   POWER_UP_ORDER,
   canActivateStoredPowerUp,
-} from './powerups.js';
-import { getPowerUpSlotAtPoint } from './powerupUi.js';
+} from './powerups.js?build=v140-close-r5';
+import { getPowerUpSlotAtPoint } from './powerupUi.js?build=v140-close-r5';
 
-function toCanvasPoint(canvas, event) {
-  const rect = canvas.getBoundingClientRect();
+function getLogicalCanvasSize(canvas) {
   return {
-    x: (event.clientX - rect.left) * (canvas.width / rect.width),
-    y: (event.clientY - rect.top)  * (canvas.height / rect.height),
+    width: Math.max(1, Number(canvas.dataset.logicalWidth) || 600),
+    height: Math.max(1, Number(canvas.dataset.logicalHeight) || 700),
   };
 }
 
+function toCanvasPoint(canvas, event) {
+  const rect = canvas.getBoundingClientRect();
+  const logical = getLogicalCanvasSize(canvas);
+  return {
+    x: (event.clientX - rect.left) * (logical.width / rect.width),
+    y: (event.clientY - rect.top)  * (logical.height / rect.height),
+  };
+}
+
+function getLayout(canvas) {
+  return canvas.dataset.layout === 'compact' ? 'compact' : 'desktop';
+}
+
 function isSettingsPoint(canvas, x, y) {
-  const cx = canvas.width - 45;
+  const { width } = getLogicalCanvasSize(canvas);
+  const cx = width - 45;
   const cy = 42;
   const r  = 24;
   return Math.hypot(x - cx, y - cy) <= r;
@@ -99,11 +112,17 @@ export function registerInputHandlers(canvas, state, abortController) {
       return;
     }
 
-    const powerUpType = getPowerUpSlotAtPoint(canvas.width, x, y);
+    const { width: logicalWidth, height: logicalHeight } = getLogicalCanvasSize(canvas);
+    const powerUpType = getPowerUpSlotAtPoint(
+      logicalWidth,
+      x,
+      y,
+      getLayout(canvas),
+      logicalHeight,
+    );
     state.hoveredPowerUpSlot = powerUpType;
 
     if (powerUpType) {
-      // El dock siempre consume el clic: nunca lanza una flecha por accidente.
       requestPowerUpActivation(state, powerUpType);
       return;
     }
@@ -115,7 +134,14 @@ export function registerInputHandlers(canvas, state, abortController) {
 
   canvas.addEventListener('mousemove', (event) => {
     const { x, y } = toCanvasPoint(canvas, event);
-    const powerUpType = getPowerUpSlotAtPoint(canvas.width, x, y);
+    const { width: logicalWidth, height: logicalHeight } = getLogicalCanvasSize(canvas);
+    const powerUpType = getPowerUpSlotAtPoint(
+      logicalWidth,
+      x,
+      y,
+      getLayout(canvas),
+      logicalHeight,
+    );
 
     state.hoveredPowerUpSlot = powerUpType;
 

@@ -70,12 +70,13 @@ export function getProgression(diffKey, score, level = 1) {
   }
 }
 
-export const APP_VERSION = '1.3.2';
-export const APP_CODENAME = 'Power Core Update';
+export const APP_VERSION = '1.4.0';
+export const APP_CODENAME = 'Boss Update';
+export const APP_NAME = 'AWS ORBISHOT';
 
 export const DIFFICULTIES = {
   easy: {
-    label:         'Easy',
+    label:         'Fácil',
     emoji:         '☁️',
     baseSpeed:     1.0,
     speedVariance: 0,
@@ -84,7 +85,7 @@ export const DIFFICULTIES = {
     description:   'Empieza tranquilo… pero el disco aprende.',
   },
   medium: {
-    label:         'Medium',
+    label:         'Medio',
     emoji:         '⚡',
     baseSpeed:     1.8,
     speedVariance: 0,
@@ -93,7 +94,7 @@ export const DIFFICULTIES = {
     description:   'Inversiones periódicas que se vuelven más frecuentes.',
   },
   hard: {
-    label:         'Hard',
+    label:         'Difícil',
     emoji:         '🔥',
     baseSpeed:     2.6,
     speedVariance: 1.4,
@@ -111,6 +112,7 @@ export const CONFIG = {
   CENTRAL_SPEED:          1.2,
   PROJECTILE_SPEED:       1600,
   PROJECTILE_RADIUS:      22,
+  READY_ARROW_BOTTOM_FACTOR: 5,
 
   GAMEOVER_DISPLAY_DELAY: 500,
 

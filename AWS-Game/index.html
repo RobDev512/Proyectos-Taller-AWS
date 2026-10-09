@@ -2,10 +2,47 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AWS Arcade Game</title>
-  <link rel="icon" href="data:,"/>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>AWS ORBISHOT</title>
+  <link rel="icon" type="image/png" href="assets/branding/aws-orbishot-logo.png"/>
   <link rel="stylesheet" href="style.css"/>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
+      background: #232F3E;
+    }
+    #gameWrapper {
+      overflow: hidden;
+      touch-action: none;
+      background: #232F3E;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right)
+               env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .gameover-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: -10px;
+      color: rgba(255,255,255,.58);
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: .1em;
+    }
+    .gameover-brand img { width: 54px; height: 42px; object-fit: contain; }
+    @media (max-width: 520px), (max-height: 700px) {
+      #gameOverCard, #settingsCard {
+        max-height: calc(100% - 16px);
+        overflow-y: auto;
+      }
+    }
+  </style>
 </head>
 <body>
 <div id="gameWrapper">
@@ -17,7 +54,11 @@
   <!-- Game Over -->
   <div id="gameOverOverlay" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
     <div id="gameOverCard">
-      <h1 id="gameOverTitle">Game Over</h1>
+      <div class="gameover-brand">
+        <img src="assets/branding/aws-orbishot-logo.png" alt=""/>
+        <span>AWS ORBISHOT</span>
+      </div>
+      <h1 id="gameOverTitle">Fin de la partida</h1>
       <div class="gameover-scores">
         <div class="gameover-score-item">
           <span class="gameover-label">Tu puntaje</span>
@@ -29,30 +70,30 @@
         </div>
       </div>
       <div class="gameover-level">Nivel alcanzado: <strong id="finalLevel">1</strong></div>
-      <button id="playAgainBtn" type="button">Play Again</button>
+      <button id="playAgainBtn" type="button">Jugar de nuevo</button>
     </div>
   </div>
 
   <!-- Settings -->
   <div id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div id="settingsCard">
-      <h2 id="settingsTitle">⚙ Configuración</h2>
+      <h2 id="settingsTitle">⚙ AWS ORBISHOT · Configuración</h2>
       <div class="settings-section">
         <p class="settings-label">Dificultad</p>
         <div id="difficultyPicker">
           <button class="diff-btn" data-diff="easy">
             <span class="diff-emoji">☁️</span>
-            <span class="diff-name">Easy</span>
+            <span class="diff-name">Fácil</span>
             <span class="diff-desc">Empieza tranquilo… el disco aprende</span>
           </button>
           <button class="diff-btn" data-diff="medium">
             <span class="diff-emoji">⚡</span>
-            <span class="diff-name">Medium</span>
+            <span class="diff-name">Medio</span>
             <span class="diff-desc">Inversiones que se vuelven más frecuentes</span>
           </button>
           <button class="diff-btn" data-diff="hard">
             <span class="diff-emoji">🔥</span>
-            <span class="diff-name">Hard</span>
+            <span class="diff-name">Difícil</span>
             <span class="diff-desc">Caos creciente. Cada flecha cuenta</span>
           </button>
         </div>
@@ -64,7 +105,7 @@
           <button id="soundToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
         <div class="settings-toggle-row">
-          <span class="settings-toggle-label">🎯 Combo multiplier</span>
+          <span class="settings-toggle-label">🎯 Multiplicador de combo</span>
           <button id="comboToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
         <div class="settings-toggle-row">
@@ -78,12 +119,14 @@
         <div class="stats-grid">
           <div class="stat-card"><span id="gamesPlayedStat" class="stat-value">0</span><span class="stat-name">Partidas</span></div>
           <div class="stat-card"><span id="accuracyStat" class="stat-value">0%</span><span class="stat-name">Precisión</span></div>
-          <div class="stat-card"><span id="perfectShotsStat" class="stat-value">0</span><span class="stat-name">Perfects</span></div>
+          <div class="stat-card"><span id="perfectShotsStat" class="stat-value">0</span><span class="stat-name">Perfectos</span></div>
           <div class="stat-card"><span id="bestComboStat" class="stat-value">×1</span><span class="stat-name">Mejor combo</span></div>
           <div class="stat-card"><span id="bestLevelStat" class="stat-value">1</span><span class="stat-name">Mejor nivel</span></div>
           <div class="stat-card"><span id="levelsCompletedStat" class="stat-value">0</span><span class="stat-name">Niveles</span></div>
-          <div class="stat-card"><span id="powerUpsCollectedStat" class="stat-value">0</span><span class="stat-name">Power-Ups</span></div>
-          <div class="stat-card"><span id="shieldSavesStat" class="stat-value">0</span><span class="stat-name">Shield Saves</span></div>
+          <div class="stat-card"><span id="powerUpsCollectedStat" class="stat-value">0</span><span class="stat-name">Potenciadores</span></div>
+          <div class="stat-card"><span id="shieldSavesStat" class="stat-value">0</span><span class="stat-name">Bloqueos del escudo</span></div>
+          <div class="stat-card"><span id="bossesDefeatedStat" class="stat-value">0</span><span class="stat-name">Jefes</span></div>
+          <div class="stat-card"><span id="bestBossRankStat" class="stat-value">—</span><span class="stat-name">Mejor rango de jefe</span></div>
         </div>
       </div>
       <div class="settings-actions">
@@ -95,6 +138,6 @@
   </div>
 
 </div>
-<script type="module" src="main.js"></script>
+<script type="module" src="main.js?build=v140-close-r5"></script>
 </body>
 </html>

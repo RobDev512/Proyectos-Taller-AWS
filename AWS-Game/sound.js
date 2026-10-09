@@ -178,3 +178,40 @@ export function playSoundShieldSave() {
   beep({ type: 'sine', freq: 740, freq2: 1120, duration: 0.22, gain: 0.18, delay: 0.03 });
   beep({ type: 'sine', freq: 1120, duration: 0.14, gain: 0.10, delay: 0.14 });
 }
+
+/** Presentación de Boss Level. */
+export function playSoundBossIntro() {
+  beep({ type: 'sawtooth', freq: 180, freq2: 90, duration: 0.32, gain: 0.18 });
+  beep({ type: 'triangle', freq: 360, freq2: 520, duration: 0.28, gain: 0.14, delay: 0.12 });
+  beep({ type: 'sine', freq: 720, duration: 0.20, gain: 0.10, delay: 0.30 });
+}
+
+/** Impacto válido sobre una pieza/capa del boss. */
+export function playSoundBossHit() {
+  beep({ type: 'square', freq: 220, freq2: 120, duration: 0.08, gain: 0.12 });
+  beep({ type: 'triangle', freq: 640, freq2: 820, duration: 0.12, gain: 0.11, delay: 0.03 });
+}
+
+/** Tiro bloqueado por la armadura del boss. */
+export function playSoundBossBlock() {
+  beep({ type: 'square', freq: 150, freq2: 95, duration: 0.10, gain: 0.13 });
+  beep({ type: 'sawtooth', freq: 280, freq2: 180, duration: 0.10, gain: 0.08, delay: 0.02 });
+}
+
+/** Cambio de fase del boss. */
+export function playSoundBossPhase() {
+  // Golpe grave + barrido ascendente para vender la sensación de que una
+  // capa física acaba de romperse y revelar la siguiente.
+  beep({ type: 'sawtooth', freq: 120, freq2: 58, duration: 0.22, gain: 0.18 });
+  beep({ type: 'square', freq: 240, freq2: 110, duration: 0.12, gain: 0.12, delay: 0.03 });
+  beep({ type: 'triangle', freq: 420, freq2: 760, duration: 0.22, gain: 0.14, delay: 0.10 });
+  beep({ type: 'sine', freq: 820, freq2: 1120, duration: 0.20, gain: 0.10, delay: 0.22 });
+}
+
+/** Fanfarria de boss derrotado. */
+export function playSoundBossDefeat() {
+  beep({ type: 'triangle', freq: 392, duration: 0.15, gain: 0.18 });
+  beep({ type: 'triangle', freq: 523, duration: 0.16, gain: 0.17, delay: 0.10 });
+  beep({ type: 'triangle', freq: 659, duration: 0.17, gain: 0.16, delay: 0.20 });
+  beep({ type: 'sine', freq: 988, duration: 0.28, gain: 0.14, delay: 0.32 });
+}

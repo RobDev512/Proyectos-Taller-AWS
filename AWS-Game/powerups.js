@@ -44,17 +44,17 @@ export const POWER_UP_CONFIG = Object.freeze({
   }),
 
   labels: Object.freeze({
-    freeze: 'FRZ',
-    shield: 'SHD',
+    freeze: 'CON',
+    shield: 'ESC',
     double: '2X',
-    cleanup: 'CLR',
+    cleanup: 'LIM',
   }),
 
   names: Object.freeze({
-    freeze: 'FREEZE',
-    shield: 'SHIELD',
-    double: 'DOUBLE',
-    cleanup: 'CLEANUP',
+    freeze: 'CONGELAR',
+    shield: 'ESCUDO',
+    double: 'DOBLE',
+    cleanup: 'LIMPIEZA',
   }),
 
   shortcuts: Object.freeze({

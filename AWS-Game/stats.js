@@ -15,17 +15,42 @@ function defaults() {
     bestLevel: 1,
     powerUpsCollected: 0,
     shieldSaves: 0,
+    bossesDefeated: 0,
+    bestBossRank: '—',
   };
 }
+
+const RANK_ORDER = Object.freeze({
+  '—': 0,
+  D: 1,
+  C: 2,
+  B: 3,
+  A: 4,
+  S: 5,
+});
 
 function sanitize(value) {
   const d = defaults();
   if (!value || typeof value !== 'object') return d;
 
-  for (const key of Object.keys(d)) {
+  for (const key of [
+    'gamesPlayed',
+    'shots',
+    'hits',
+    'perfectShots',
+    'bestCombo',
+    'levelsCompleted',
+    'bestLevel',
+    'powerUpsCollected',
+    'shieldSaves',
+    'bossesDefeated',
+  ]) {
     const n = Number.parseInt(value[key], 10);
     d[key] = Number.isFinite(n) && n >= 0 ? n : d[key];
   }
+
+  const rank = String(value.bestBossRank ?? '—').toUpperCase();
+  d.bestBossRank = Object.hasOwn(RANK_ORDER, rank) ? rank : '—';
 
   d.bestCombo = Math.max(1, d.bestCombo);
   d.bestLevel = Math.max(1, d.bestLevel);
@@ -90,6 +115,23 @@ export function recordPowerUp(stats) {
 
 export function recordShieldSave(stats) {
   stats.shieldSaves = (stats.shieldSaves ?? 0) + 1;
+  saveStats(stats);
+}
+
+export function recordBossDefeat(stats, rank = 'D') {
+  stats.bossesDefeated = (stats.bossesDefeated ?? 0) + 1;
+
+  const safeRank = Object.hasOwn(RANK_ORDER, String(rank).toUpperCase())
+    ? String(rank).toUpperCase()
+    : 'D';
+  const currentRank = Object.hasOwn(RANK_ORDER, stats.bestBossRank)
+    ? stats.bestBossRank
+    : '—';
+
+  if (RANK_ORDER[safeRank] > RANK_ORDER[currentRank]) {
+    stats.bestBossRank = safeRank;
+  }
+
   saveStats(stats);
 }
 

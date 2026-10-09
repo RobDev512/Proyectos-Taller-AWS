@@ -1,4 +1,67 @@
-# AWS Arcade Game — Release Notes
+# AWS ORBISHOT — Release Notes
+
+## v1.4.0 - Boss Update
+
+### Pulido final de cierre
+- La interfaz visible queda en español, manteniendo **Boss Update** como nombre oficial de la versión.
+- Las capas de los jefes reducen físicamente su superficie visual al romperse; el aro roto también cae como escombro.
+- Las puntas de las flechas ancladas quedan parcialmente ocultas detrás de la superficie del jefe para simular mejor que están enterradas.
+- En móvil, el texto de versión se separa del panel de poder y el build final usa cache-busting `v140-close-r5`.
+
+- Pulido de UI previo al release: Dock de Power-Ups por encima del gameplay, textos del medidor sin overflow y legibilidad móvil reforzada.
+- Los próximos parches quedan fuera de este release: v1.4.1 (audio/música) y v1.4.2 (economía, monedas, tienda y vidas).
+
+- Normal Stability: fuera de Boss Levels, las colisiones ya no son instakill. STABILITY empieza en 100%, las colisiones restan 40%, los aciertos recuperan 8% y completar un nivel recupera 30%. Al llegar a 0% termina la partida.
+
+La primera actualización mayor bajo el nombre **AWS ORBISHOT** añade Boss Levels por capas sin abandonar el control de una sola acción del juego.
+
+### Bosses por capas
+- ARMOR: 6 piezas exteriores orbitantes.
+- EXPOSED: 4 piezas interiores más cercanas y rápidas.
+- CORE: 3 capas internas del núcleo expuesto.
+- Armor y Exposed giran siempre en un solo sentido y cada pieza también rota sobre sí misma.
+- Las piezas usan la familia geométrica del boss: círculo, triángulo, cuadrado, estrella, pentágono o hexágono.
+- Al romper una capa se activa shake/flash y la siguiente fase aparece después de una breve pausa.
+- Las flechas clavadas se desprenden y siguen cayendo hasta salir por abajo.
+- También se generan fragmentos/escombros físicos de la capa destruida, que continúan cayendo de forma independiente.
+- El núcleo final también genera fragmentos al derrotar al boss.
+
+### Nueva condición de derrota: OVERLOAD
+- Durante Boss Levels, chocar con una flecha anclada ya no provoca Game Over instantáneo.
+- Un tiro que llega al boss sin haber atravesado la pieza correcta carga `+25 %` de Overload.
+- Una colisión con una flecha anclada carga `+30 %` de Overload.
+- Un impacto válido descarga `10 %` y completar una fase descarga `20 %` adicionales.
+- Si Overload llega a `100 %`, el boss gana el combate.
+- Shield absorbe una colisión y evita que ese error cargue Overload.
+- Fuera de Boss Levels, la regla clásica de colisión/Game Over permanece igual.
+
+### Power Core durante bosses
+- Power Core funciona como **pickup shot**: atravesarlo concede el Power-Up inmediatamente y la flecha se disipa.
+- No requiere alinearse con las piezas de Armor/Exposed.
+- El pickup shot no penaliza la precisión del ranking del boss.
+
+### Identidad y responsive
+- Nombre oficial visible: **AWS ORBISHOT**.
+- Logo transparente integrado en HUD, favicon y landing pública.
+- Dock móvil rediseñado con cuatro botones circulares táctiles y barra Power/Core separada para evitar solapamientos con el área jugable.
+- Soporte de `VisualViewport` y bloqueo del pinch-zoom que podía desplazar el juego fuera de pantalla.
+- Canvas HiDPI: el backing store se adapta al tamaño visible y al `devicePixelRatio`, manteniendo coordenadas lógicas 600×700 para que textos, HUD y líneas se vean más nítidos.
+
+### Progresión y resultados
+- Cada quinto nivel es un Boss Level.
+- El combate completo requiere 13 impactos válidos: `6 + 4 + 3`.
+- Ranking `S/A/B/C/D` basado en precisión, tiempo y Perfect Shots.
+- Tiempo objetivo del ranking ajustado al combate de 13 impactos.
+- Bonus de score dependiente del boss y del ranking.
+- Estadísticas persistentes: Bosses derrotados y Mejor Boss Rank.
+- Corregido `LEVEL BONUS +0` en niveles normales; `null` ya no se interpreta como un override de bonus igual a cero.
+
+### Compatibilidad
+- `collision.js` no se modifica.
+- La hitbox sigue exactamente en `fp.radius * 0.35`.
+- Las formas visuales de boss no alteran el radio físico base.
+
+---
 
 ## v1.3.2 - Power Core Update
 
@@ -133,3 +196,19 @@ Esta versión convierte la partida infinita original en una progresión por fase
 ### Compatibilidad
 - Conserva récord, preferencias y estadísticas de v1.1.0.
 - La hitbox de colisión continúa en `0.35 × radius`.
+
+### Revisión de jugabilidad — dirección y Power Cores
+
+- Las piezas vulnerables de Armor/Exposed mantienen siempre un único sentido orbital; los reversals ya no cambian su dirección.
+- Firewall no usa reversal, para que el primer boss enseñe el sistema sin interrupciones.
+- Los reversals de bosses posteriores afectan al cuerpo/rotación central, no a la corona vulnerable.
+- Durante bosses, Power Core funciona como **pickup shot**: atravesarlo concede el Power-Up inmediatamente y la flecha se disipa, sin exigir alineación con la armadura.
+- Los pickup shots de Power Core no penalizan la precisión del ranking del boss.
+- El Power Core usa una órbita propia ligeramente exterior durante bosses.
+- El viewport sigue al `VisualViewport` para evitar que pinch-zoom/pan deje el juego fuera de pantalla.
+
+### Pulido final de UX
+- La ayuda contextual móvil vive dentro del panel Power/Core para evitar recortes contra el borde inferior.
+- Los controles circulares de Power-Ups conservan su decoración mediante acentos orbitales segmentados más claros.
+- Freeze habilita Stack Shots durante el efecto: una colisión con una flecha anclada se convierte en un anchor válido y no añade Overload.
+- La flecha preparada queda ligeramente más abajo y se lanza desde esa misma posición.

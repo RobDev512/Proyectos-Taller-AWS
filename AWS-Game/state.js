@@ -8,6 +8,8 @@ import {
   createPowerUpInventory,
 } from './powerups.js';
 import { createPowerCoreState } from './powercore.js';
+import { createInactiveBossState } from './boss.js';
+import { STABILITY_CONFIG } from './stability.js';
 
 function randomIcon() {
   return CONFIG.AWS_ICONS[
@@ -17,7 +19,7 @@ function randomIcon() {
 
 /**
  * @typedef {Object} GameState
- * @property {'idle'|'playing'|'levelcomplete'|'gameover'} phase
+ * @property {'idle'|'playing'|'bossintro'|'levelcomplete'|'gameover'} phase
  * @property {number} score
  * @property {number} highScore
  * @property {number} level
@@ -31,12 +33,16 @@ function randomIcon() {
  * @property {boolean} pendingLaunch
  * @property {string|null} pendingPowerUpActivation
  * @property {number} gameOverTimestamp
+ * @property {string|null} gameOverReason
  * @property {string} nextArrowId
- * @property {string|null} nextPowerUp
  * @property {{freezeTimer:number, shieldCharges:number, doubleScoreHits:number}} activePowerUps
  * @property {{freeze:number, shield:number, double:number, cleanup:number}} powerUpInventory
  * @property {number} powerUpCharge
  * @property {Object} powerCore
+ * @property {Object} boss
+ * @property {Object[]} detachedBossArrows
+ * @property {Object[]} detachedBossDebris
+ * @property {number} stability
  * @property {string|null} hoveredPowerUpSlot
  * @property {string} difficulty
  * @property {number} lastReverseScore
@@ -77,6 +83,8 @@ export function createInitialState(
     pendingPowerUpActivation: null,
     hoveredPowerUpSlot: null,
     gameOverTimestamp: 0,
+    gameOverReason: null,
+    stability: STABILITY_CONFIG.max,
 
     nextArrowId: randomIcon(),
     nextPowerUp: null,
@@ -85,6 +93,9 @@ export function createInitialState(
     powerUpInventory: createPowerUpInventory(),
     powerUpCharge: 0,
     powerCore: createPowerCoreState(),
+    boss: createInactiveBossState(1),
+    detachedBossArrows: [],
+    detachedBossDebris: [],
     lastPreparedWasPowerUp: false,
 
     difficulty,

@@ -7,11 +7,11 @@ import {
   launchProjectile,
   advanceProjectile,
   anchorProjectile,
-} from './projectile.js';
+} from './projectile.js?build=v140-close-r5';
 import { checkCollision } from './collision.js';
-import { render, drawGameOverFlash } from './renderer.js';
+import { render, drawGameOverFlash } from './renderer.js?build=v140-close-r5';
 import { showGameOver } from './ui.js';
-import { getProgression } from './config.js';
+import { getProgression } from './config.js?build=v140-close-r5';
 import {
   playSoundLaunch,
   playSoundAnchor,
@@ -25,6 +25,11 @@ import {
   playSoundPowerCoreSpawn,
   playSoundPowerCoreLock,
   playSoundShieldSave,
+  playSoundBossIntro,
+  playSoundBossHit,
+  playSoundBossBlock,
+  playSoundBossPhase,
+  playSoundBossDefeat,
 } from './sound.js';
 import {
   emitImpact,
@@ -52,6 +57,7 @@ import {
   recordLevelComplete,
   recordPowerUp,
   recordShieldSave,
+  recordBossDefeat,
 } from './stats.js';
 import {
   ensureLevelState,
@@ -72,7 +78,7 @@ import {
   POWER_UP_TYPES,
   resetPowerUps,
   updatePowerUps,
-} from './powerups.js';
+} from './powerups.js?build=v140-close-r5';
 import {
   checkPowerCoreCrossing,
   completePowerCoreCapture,
@@ -80,6 +86,28 @@ import {
   trySpawnPowerCore,
   updatePowerCore,
 } from './powercore.js';
+import {
+  damageStability,
+  recoverStability,
+  restoreStability,
+  STABILITY_CONFIG,
+} from './stability.js';
+import {
+  checkBossLayerCrossing,
+  ensureBossState,
+  evaluateBossImpact,
+  getBossPhase,
+  recordBossBlockedShot,
+  recordBossShot,
+  refundBossUtilityShot,
+  registerBossHit,
+  isBossPhaseTransitionActive,
+  updateBossDetachedArrows,
+  updateBossDetachedDebris,
+  updateBossPhaseTransition,
+  updateBoss,
+  updateBossIntro,
+} from './boss.js?build=v140-close-r5';
 
 let rafId = null;
 let overlayShown = false;
@@ -97,10 +125,10 @@ const SERVICE_COLORS = {
 };
 
 const USE_MESSAGES = Object.freeze({
-  freeze: ['FREEZE ACTIVATED', 'ROTATION PAUSED'],
-  shield: ['SHIELD ARMED', 'NEXT COLLISION BLOCKED'],
-  double: ['DOUBLE SCORE', 'NEXT 3 HITS'],
-  cleanup: ['CLEANUP USED', 'OLDEST ARROW REMOVED'],
+  freeze: ['¡FREEZE ACTIVADO!', 'ROTACIÓN PAUSADA'],
+  shield: ['¡ESCUDO ARMADO!', 'SIGUIENTE COLISIÓN BLOQUEADA'],
+  double: ['¡PUNTAJE DOBLE!', 'PRÓXIMOS 3 GOLPES'],
+  cleanup: ['¡LIMPIEZA USADA!', 'FLECHA MÁS VIEJA ELIMINADA'],
 });
 
 function emitActivationFeedback(state, activation) {
@@ -108,7 +136,7 @@ function emitActivationFeedback(state, activation) {
 
   const type = activation.type;
   const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
-  const message = USE_MESSAGES[type] ?? ['POWER-UP USED', ''];
+  const message = USE_MESSAGES[type] ?? ['POTENCIADOR USADO', ''];
 
   emitBanner(
     message[0],
@@ -124,12 +152,15 @@ function emitActivationFeedback(state, activation) {
     activation.removedProjectile
   ) {
     const removed = activation.removedProjectile;
+    const removedVisualDistance = Number.isFinite(removed.renderDistance)
+      ? removed.renderDistance
+      : removed.distance;
     fxX =
       state.centralElement.x +
-      removed.distance * Math.cos(removed.angle);
+      removedVisualDistance * Math.cos(removed.angle);
     fxY =
       state.centralElement.y +
-      removed.distance * Math.sin(removed.angle);
+      removedVisualDistance * Math.sin(removed.angle);
 
     emitFloatingText(fxX, fxY - 14, 'REMOVED', {
       color,
@@ -162,9 +193,15 @@ function emitPowerCoreSpawnFeedback(state, spawn) {
   const color =
     POWER_UP_CONFIG.colors[spawn.type] ?? '#FF9900';
 
+  const bossPickupMode = Boolean(
+    state.boss?.active && !state.boss.defeated,
+  );
+
   emitBanner(
-    'POWER CORE READY!',
-    'TIME YOUR SHOT • CROSS THE CORE AND LAND IT',
+    '¡NÚCLEO DE PODER LISTO!',
+    bossPickupMode
+      ? 'PICKUP SHOT • CROSS IT TO COLLECT'
+      : 'CALCULA TU DISPARO • CRUZA EL NÚCLEO Y ATERRIZA',
     { color, priority: 'high', duration: 1.35 },
   );
 
@@ -195,7 +232,7 @@ function emitPowerCoreLockFeedback(hit) {
   const label =
     POWER_UP_CONFIG.names[hit.type] ?? 'POWER';
 
-  emitFloatingText(hit.x, hit.y - 20, `${label} LOCKED!`, {
+  emitFloatingText(hit.x, hit.y - 20, `¡${label} GUARDADO!`, {
     color,
     size: 14,
     duration: 0.68,
@@ -211,12 +248,12 @@ function emitPowerCoreCaptureFeedback(state, capture, x, y) {
 
   const type = capture.type;
   const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
-  const label = POWER_UP_CONFIG.names[type] ?? 'POWER-UP';
+  const label = POWER_UP_CONFIG.names[type] ?? 'POTENCIADOR';
   const shortcut = POWER_UP_CONFIG.shortcuts[type] ?? '?';
 
   emitBanner(
-    `${label} CAPTURED!`,
-    `STORED • CLICK SLOT OR PRESS ${shortcut}`,
+    `¡${label} CAPTURADO!`,
+    `GUARDADO • CLIC EN EL ESPACIO O PRESIONA ${shortcut}`,
     { color, priority: 'high', duration: 1.25 },
   );
 
@@ -253,7 +290,7 @@ function awardChargeForHit(state, precision, comboMultiplier) {
     emitFloatingText(
       state.centralElement.x + state.centralElement.radius + 38,
       state.centralElement.y + state.centralElement.radius + 34,
-      `+${Math.round(result.added)}% POWER`,
+      `+${Math.round(result.added)}% PODER`,
       {
         color: '#FFB24D',
         size: 9,
@@ -268,6 +305,151 @@ function awardChargeForHit(state, precision, comboMultiplier) {
   }
 }
 
+function emitBossBlockedFeedback(state, overloadResult = null, label = '¡BLOQUEADO!') {
+  const boss = state.boss;
+  const color = boss?.color ?? '#FF6B35';
+  const ce = state.centralElement;
+  emitFloatingText(ce.x, ce.y + ce.radius + 28, label, {
+    color,
+    size: 15,
+    duration: 0.72,
+    vy: -20,
+  });
+
+  if (overloadResult?.added > 0) {
+    emitFloatingText(
+      ce.x,
+      ce.y + ce.radius + 48,
+      `SOBRECARGA ${Math.round(overloadResult.value)}%`,
+      {
+        color: overloadResult.overloaded ? '#FF4D4D' : '#FFB24D',
+        size: 11,
+        duration: 0.86,
+        vy: -12,
+      },
+    );
+  }
+
+  emitRing(ce.x, ce.y, color, 1.0);
+  playSoundBossBlock();
+}
+
+function emitStabilityCollisionFeedback(state, result) {
+  const ce = state.centralElement;
+  const remaining = Math.round(result?.value ?? state.stability ?? 0);
+  const overload = Math.max(0, 100 - remaining);
+  const critical = overload >= 75;
+  const color = critical ? '#FF4D4D' : '#FFB24D';
+
+  emitBanner(
+    critical ? '¡SOBRECARGA CRÍTICA!' : '¡SUBE LA SOBRECARGA!',
+    `${overload}% • 100% = GAME OVER`,
+    { color, priority: 'high', duration: 1.0 },
+  );
+
+  emitFloatingText(
+    ce.x,
+    ce.y + ce.radius + 34,
+    `SOBRECARGA ${overload}%`,
+    { color, size: 13, duration: 0.8, vy: -18 },
+  );
+
+  emitRing(ce.x, ce.y, color, 1.0);
+  emitImpact(ce.x, ce.y, color, 18, 'burst');
+}
+
+function enterGameOver(state, reason = 'COLLISION') {
+  if (state.phase === 'gameover') return;
+
+  state.phase = 'gameover';
+  state.gameOverReason = reason;
+  state.gameOverTimestamp = performance.now();
+  state.pendingPowerUpActivation = null;
+  state.pendingLaunch = false;
+  state.flyingProjectile = null;
+
+  overlayShown = false;
+  flashTimer = 0.25;
+
+  resetPowerUps(state);
+  resetPowerCore(state);
+
+  if (state.stats) recordGameOver(state.stats);
+  playSoundGameOver();
+}
+
+function emitBossHitFeedback(state, result) {
+  const boss = state.boss;
+  const phase = getBossPhase(state);
+  const color = boss?.accent ?? '#FFD166';
+
+  emitFloatingText(
+    state.centralElement.x,
+    state.centralElement.y - state.centralElement.radius - 28,
+    result?.phaseChanged ? `¡${phase?.label ?? 'FASE'} REVELADA!` : (phase?.id === 'core' ? '¡NÚCLEO DAÑADO!' : '¡CAPA DESTRUIDA!'),
+    {
+      color,
+      size: result?.phaseChanged ? 18 : 14,
+      duration: result?.phaseChanged ? 0.95 : 0.68,
+      vy: -18,
+    },
+  );
+
+  emitRing(state.centralElement.x, state.centralElement.y, color, 1.12);
+  playSoundBossHit();
+
+  if (result?.phaseChanged) {
+    emitImpact(
+      state.centralElement.x,
+      state.centralElement.y,
+      color,
+      42,
+      'burst',
+    );
+    playSoundBossPhase();
+  }
+}
+
+function completeBossLevel(state, result) {
+  const completed = state.level;
+  const bonus = beginLevelComplete(state, result?.bonus ?? null);
+
+  state.score += bonus;
+  updateHighScore(state);
+  resetCombo(state);
+  restoreStability(state);
+
+  addPowerUpCharge(
+    state,
+    POWER_UP_CONFIG.levelCompleteCharge,
+  );
+
+  if (state.stats) {
+    recordLevelComplete(state.stats, completed);
+    recordBossDefeat(state.stats, result?.rank ?? 'D');
+  }
+
+  emitImpact(
+    state.centralElement.x,
+    state.centralElement.y,
+    state.boss?.accent ?? '#FFD166',
+    80,
+    'confetti',
+  );
+
+  emitBanner(
+    '¡JEFE DERROTADO!',
+    `RANK ${result?.rank ?? 'D'} • BONUS +${bonus}`,
+    {
+      color: state.boss?.accent ?? '#FFD166',
+      priority: 'high',
+      duration: 1.35,
+    },
+  );
+
+  playSoundBossDefeat();
+}
+
 export function startGameLoop(ctx, state, assets, config, overlayEl) {
   stopGameLoop();
   overlayShown = false;
@@ -277,6 +459,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
   clearFeedback();
   resetCombo(state);
   ensureLevelState(state);
+  ensureBossState(state);
 
   state.lastTier =
     getProgression(
@@ -285,11 +468,16 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
       state.level,
     ).tier;
 
-  emitBanner(
-    `LEVEL ${state.level}`,
-    `${getLevelTarget(state.level)} ARROWS TO CLEAR`,
-    { priority: 'high', duration: 1.35 },
-  );
+  if (state.boss?.active) {
+    state.phase = 'bossintro';
+    playSoundBossIntro();
+  } else {
+    emitBanner(
+      `NIVEL ${state.level}`,
+      `${getLevelTarget(state.level)} FLECHAS PARA COMPLETAR`,
+      { priority: 'high', duration: 1.35 },
+    );
+  }
 
   let lastTimestamp = performance.now();
 
@@ -300,6 +488,17 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
     );
     lastTimestamp = timestamp;
 
+    const logicalHeight = Math.max(
+      config.CANVAS_HEIGHT,
+      Number(ctx.canvas.dataset.logicalHeight) || config.CANVAS_HEIGHT,
+    );
+    const sceneOffsetY = Math.max(
+      0,
+      Number(ctx.canvas.dataset.sceneOffsetY) || 0,
+    );
+    state.uiLogicalHeight = logicalHeight;
+    state.uiSceneOffsetY = sceneOffsetY;
+
     let progression = getProgression(
       state.difficulty,
       state.score,
@@ -308,7 +507,19 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
 
     if (flashTimer > 0) flashTimer -= deltaTime;
 
+    // Los restos de una capa rota son puramente visuales y tienen ciclo de
+    // vida propio: siguen actualizándose aunque termine la pausa de fase.
+    updateBossDetachedArrows(state, deltaTime);
+    updateBossDetachedDebris(state, deltaTime);
+
     if (state.phase === 'playing') {
+      if (isBossPhaseTransitionActive(state)) {
+        // Durante la ruptura entre fases no se puede lanzar ni activar nada.
+        // El boss sacude la arena y expulsa visualmente las flechas antiguas.
+        state.pendingLaunch = false;
+        state.pendingPowerUpActivation = null;
+        updateBossPhaseTransition(state, deltaTime);
+      } else {
       processPendingPowerUpActivation(state);
 
       // Si el inventario estaba lleno al llegar a 100 %, usar un Power-Up
@@ -321,6 +532,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         !state.flyingProjectile
       ) {
         launchProjectile(state, config);
+        if (state.boss?.active && !state.boss.defeated) recordBossShot(state);
         playSoundLaunch();
       }
 
@@ -328,6 +540,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         updatePowerUps(state, deltaTime);
       } else {
         updateRotation(state, deltaTime, progression);
+        updateBoss(state, deltaTime);
       }
 
       if (
@@ -354,21 +567,113 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         );
 
         if (coreHit) {
-          emitPowerCoreLockFeedback(coreHit);
+          const bossPickupMode = Boolean(
+            state.boss?.active && !state.boss.defeated,
+          );
+
+          if (bossPickupMode) {
+            // En bosses el Power Core es un objetivo alterno, no una condición
+            // adicional para dañar la armadura. Atravesarlo lo recoge al
+            // instante y la flecha se disipa antes de llegar al boss.
+            const capture = completePowerCoreCapture(
+              state,
+              coreHit.type,
+            );
+
+            if (capture.captured) {
+              refundBossUtilityShot(state);
+              emitPowerCoreCaptureFeedback(
+                state,
+                capture,
+                coreHit.x,
+                coreHit.y,
+              );
+              emitFloatingText(
+                coreHit.x,
+                coreHit.y + 34,
+                'PICKUP SHOT!',
+                {
+                  color: POWER_UP_CONFIG.colors[coreHit.type] ?? '#FFFFFF',
+                  size: 10,
+                  duration: 0.62,
+                  vy: -10,
+                },
+              );
+              state.flyingProjectile = null;
+            }
+          } else {
+            emitPowerCoreLockFeedback(coreHit);
+          }
         }
 
-        const result = checkCollision(state);
+        const bossLayerHit = checkBossLayerCrossing(
+          state,
+          state.flyingProjectile,
+          previousX,
+          previousY,
+        );
+
+        if (bossLayerHit) {
+          emitFloatingText(
+            bossLayerHit.x,
+            bossLayerHit.y - 18,
+            bossLayerHit.phase === 'core' ? '¡NÚCLEO ASEGURADO!' : '¡CAPA ASEGURADA!',
+            {
+              color: bossLayerHit.color ?? state.boss?.accent ?? '#FFD166',
+              size: 11,
+              duration: 0.48,
+              vy: -12,
+            },
+          );
+          emitRing(
+            bossLayerHit.x,
+            bossLayerHit.y,
+            bossLayerHit.color ?? state.boss?.accent ?? '#FFD166',
+            0.72,
+          );
+        }
+
+        const rawResult = checkCollision(state);
+        // FREEZE obtiene una segunda identidad jugable: mientras está activo,
+        // las flechas pueden apilarse en el mismo punto. La hitbox original se
+        // sigue detectando exactamente igual; únicamente convertimos esa
+        // colisión en un anchor válido durante la ventana de Freeze.
+        const freezeStackShot =
+          rawResult === 'collision' && isFreezeActive(state);
+        const result = freezeStackShot ? 'anchor' : rawResult;
 
         if (result === 'anchor') {
-          // El tipo queda bloqueado exactamente cuando la flecha atraviesa
-          // el Core. Aún debe anclarse para cobrar la recompensa.
-          const powerCoreHitType =
-            state.flyingProjectile?.powerCoreHitType ?? null;
+          const bossImpact = evaluateBossImpact(
+            state,
+            state.flyingProjectile,
+          );
 
-          const scoreBefore = state.score;
+          if (bossImpact.boss && !bossImpact.hit) {
+            // El boss bloquea tiros que no atravesaron una pieza activa de la capa.
+            // se pierde la flecha, se reinicia el combo y el boss sigue.
+            state.flyingProjectile = null;
+            resetCombo(state);
+            const overload = recordBossBlockedShot(state, 'blocked');
+            emitBossBlockedFeedback(state, overload, '¡BLOQUEADO!');
 
-          anchorProjectile(state);
-          registerLevelHit(state);
+            if (overload?.overloaded) {
+              emitBanner(
+                '¡SOBRECARGA DEL JEFE!',
+                'TOO MANY FAILED SHOTS',
+                { color: '#FF4D4D', priority: 'high', duration: 1.2 },
+              );
+              enterGameOver(state, 'SOBRECARGA DEL JEFE');
+            }
+          } else {
+            // El tipo queda bloqueado exactamente cuando la flecha atraviesa
+            // el Core. Aún debe anclarse para cobrar la recompensa.
+            const powerCoreHitType =
+              state.flyingProjectile?.powerCoreHitType ?? null;
+
+            const scoreBefore = state.score;
+
+            anchorProjectile(state);
+            registerLevelHit(state);
 
           const ap =
             state.anchoredProjectiles[
@@ -376,13 +681,32 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             ];
 
           const ce = state.centralElement;
+          const impactDistance = Number.isFinite(ap.renderDistance)
+            ? ap.renderDistance
+            : ap.distance;
           const impactX =
-            ce.x + ap.distance * Math.cos(ap.angle);
+            ce.x + impactDistance * Math.cos(ap.angle);
           const impactY =
-            ce.y + ap.distance * Math.sin(ap.angle);
+            ce.y + impactDistance * Math.sin(ap.angle);
 
           const color =
             SERVICE_COLORS[ap.awsIconId] ?? '#FF9900';
+
+          if (freezeStackShot) {
+            const freezeColor = POWER_UP_CONFIG.colors.freeze;
+            emitFloatingText(
+              impactX,
+              impactY - 24,
+              '¡APILADA!',
+              {
+                color: freezeColor,
+                size: 14,
+                duration: 0.52,
+                vy: -20,
+              },
+            );
+            emitRing(impactX, impactY, freezeColor, 0.72);
+          }
 
           if (state.stats) recordHit(state.stats);
 
@@ -425,7 +749,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             emitFloatingText(
               impactX,
               impactY - 18,
-              `PERFECT! +${gained}`,
+              `¡PERFECTO! +${gained}`,
               {
                 color: '#FFD166',
                 size: 19,
@@ -489,6 +813,21 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
           // Jugar bien llena el siguiente Power Charge.
           awardChargeForHit(state, precision, mult);
 
+          // En niveles normales, acertar también recupera parte del margen
+          // de error. Los Boss Levels usan su propio medidor de OVERLOAD.
+          if (!state.boss?.active) {
+            recoverStability(state, STABILITY_CONFIG.hitRecovery);
+          }
+
+          let bossHitResult = null;
+          if (state.boss?.active && !state.boss.defeated) {
+            bossHitResult = registerBossHit(state, {
+              perfect: Boolean(precision?.perfect),
+              nodeIndex: bossImpact.nodeIndex,
+            });
+            emitBossHitFeedback(state, bossHitResult);
+          }
+
           progression = getProgression(
             state.difficulty,
             state.score,
@@ -499,7 +838,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             state.lastTier = progression.tier;
 
             emitBanner(
-              `TIER ${progression.tier}`,
+              `RANGO ${progression.tier}`,
               'La dificultad acaba de subir',
               { duration: 0.95 },
             );
@@ -515,13 +854,16 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             playSoundTierUp();
           }
 
-          if (isLevelComplete(state)) {
+          if (bossHitResult?.defeated) {
+            completeBossLevel(state, bossHitResult.result);
+          } else if (isLevelComplete(state) && !state.boss?.active) {
             const completed = state.level;
             const bonus = beginLevelComplete(state);
 
             state.score += bonus;
             updateHighScore(state);
             resetCombo(state);
+            recoverStability(state, STABILITY_CONFIG.levelRecovery);
 
             addPowerUpCharge(
               state,
@@ -545,6 +887,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
 
             playSoundLevelComplete();
           }
+          }
 
         } else if (result === 'collision') {
           const shieldX =
@@ -565,8 +908,8 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
               POWER_UP_CONFIG.colors.shield;
 
             emitBanner(
-              'SHIELD SAVE!',
-              'COLLISION BLOCKED',
+              '¡SALVADA DE ESCUDO!',
+              'COLISIÓN BLOQUEADA',
               {
                 color: shieldColor,
                 priority: 'high',
@@ -577,7 +920,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             emitFloatingText(
               shieldX,
               shieldY - 18,
-              'SHIELD SAVE!',
+              '¡SALVADA DE ESCUDO!',
               {
                 color: shieldColor,
                 size: 17,
@@ -606,21 +949,64 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             if (state.stats) {
               recordShieldSave(state.stats);
             }
+          } else if (state.boss?.active && !state.boss.defeated) {
+            // En Boss Levels una colisión con otra flecha ya no mata al
+            // instante. Se convierte en un error que carga OVERLOAD.
+            state.flyingProjectile = null;
+            resetCombo(state);
+
+            const overload = recordBossBlockedShot(state, 'collision');
+            emitBossBlockedFeedback(state, overload, 'DEFLECTED!');
+            emitImpact(
+              shieldX,
+              shieldY,
+              state.boss?.color ?? '#FF6B35',
+              16,
+              'burst',
+            );
+
+            if (overload?.overloaded) {
+              emitBanner(
+                '¡SOBRECARGA DEL JEFE!',
+                'EL JEFE SATURÓ LA ARENA',
+                { color: '#FF4D4D', priority: 'high', duration: 1.2 },
+              );
+              enterGameOver(state, 'SOBRECARGA DEL JEFE');
+            }
           } else {
-            state.phase = 'gameover';
-            state.gameOverTimestamp = performance.now();
-            state.pendingPowerUpActivation = null;
+            // Los niveles normales también dan margen de error: una colisión
+            // consume STABILITY en vez de matar al jugador al instante.
+            state.flyingProjectile = null;
+            resetCombo(state);
 
-            overlayShown = false;
-            flashTimer = 0.25;
+            const stability = damageStability(
+              state,
+              STABILITY_CONFIG.collisionLoss,
+            );
+            emitStabilityCollisionFeedback(state, stability);
 
-            resetPowerUps(state);
-            resetPowerCore(state);
-
-            if (state.stats) recordGameOver(state.stats);
-            playSoundGameOver();
+            if (stability.depleted) {
+              enterGameOver(state, 'SOBRECARGA');
+            }
           }
         }
+      }
+
+      }
+    } else if (state.phase === 'bossintro') {
+      updateRotation(state, deltaTime * 0.35, progression);
+
+      if (updateBossIntro(state, deltaTime)) {
+        state.phase = 'playing';
+        emitBanner(
+          state.boss?.name ?? 'JEFE',
+          'FASE 1 • ROMPE LA ARMADURA',
+          {
+            color: state.boss?.color ?? '#FF6B35',
+            priority: 'high',
+            duration: 1.25,
+          },
+        );
       }
 
     } else if (state.phase === 'levelcomplete') {
@@ -640,11 +1026,15 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
 
         state.lastTier = progression.tier;
 
-        emitBanner(
-          `LEVEL ${nextLevel}`,
-          `${getLevelTarget(nextLevel)} ARROWS TO CLEAR`,
-          { priority: 'high', duration: 1.35 },
-        );
+        if (state.boss?.active) {
+          playSoundBossIntro();
+        } else {
+          emitBanner(
+            `NIVEL ${nextLevel}`,
+            `${getLevelTarget(nextLevel)} FLECHAS PARA COMPLETAR`,
+            { priority: 'high', duration: 1.35 },
+          );
+        }
       }
     }
 
@@ -663,8 +1053,15 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
     }
 
     render(ctx, state, assets, progression);
+
+    // Partículas y textos de impacto pertenecen al mundo 600×700; en móvil
+    // vertical siguen el mismo desplazamiento visual que disco/flechas.
+    ctx.save();
+    ctx.translate(0, sceneOffsetY);
     updateAndDraw(ctx, deltaTime);
-    updateAndDrawFeedback(ctx, deltaTime);
+    ctx.restore();
+
+    updateAndDrawFeedback(ctx, deltaTime, { sceneOffsetY });
     drawGameOverFlash(ctx, flashTimer);
 
     rafId = requestAnimationFrame(tick);
