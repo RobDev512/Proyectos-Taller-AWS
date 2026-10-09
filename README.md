@@ -34,6 +34,7 @@ Sin frameworks externos.
 - `aws-game-v1.3.1` — Interactive Power-Ups Patch
 - `aws-game-v1.3.2` — Power Core Update
 - `aws-game-v1.4.0` — Boss Update + rebranding AWS ORBISHOT
+- `aws-game-v1.4.1` — Audio Update / Soundtrack Patch
 
 Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
@@ -56,4 +57,4 @@ Posteriormente el proyecto continuó desarrollándose fuera del workshop con nue
 
 La versión estable publicada actualmente es:
 
-**v1.4.0 - Boss Update**
+**v1.4.1 - Audio Update**

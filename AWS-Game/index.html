@@ -36,6 +36,36 @@
       letter-spacing: .1em;
     }
     .gameover-brand img { width: 54px; height: 42px; object-fit: contain; }
+    .settings-volume-row {
+      display: grid;
+      grid-template-columns: minmax(128px, 1fr) minmax(120px, 1.25fr) 44px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+    }
+    .settings-volume-label {
+      color: rgba(255,255,255,.86);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .settings-volume-value {
+      color: #FFB347;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .settings-volume-row input[type="range"] {
+      width: 100%;
+      accent-color: #FF9900;
+      cursor: pointer;
+    }
+    @media (max-width: 520px), (max-height: 700px) {
+      .settings-volume-row {
+        grid-template-columns: 1fr 1.1fr 40px;
+        gap: 8px;
+      }
+    }
     @media (max-width: 520px), (max-height: 700px) {
       #gameOverCard, #settingsCard {
         max-height: calc(100% - 16px);
@@ -105,6 +135,20 @@
           <button id="soundToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
         <div class="settings-toggle-row">
+          <span class="settings-toggle-label">🎵 Música dinámica</span>
+          <button id="musicToggle" class="toggle-btn on" aria-pressed="true"></button>
+        </div>
+        <div class="settings-volume-row">
+          <label class="settings-volume-label" for="soundVolume">Volumen de efectos</label>
+          <input id="soundVolume" type="range" min="0" max="100" step="1" value="100" aria-label="Volumen de efectos de sonido"/>
+          <span id="soundVolumeValue" class="settings-volume-value">100%</span>
+        </div>
+        <div class="settings-volume-row">
+          <label class="settings-volume-label" for="musicVolume">Volumen de música</label>
+          <input id="musicVolume" type="range" min="0" max="100" step="1" value="100" aria-label="Volumen de música"/>
+          <span id="musicVolumeValue" class="settings-volume-value">100%</span>
+        </div>
+        <div class="settings-toggle-row">
           <span class="settings-toggle-label">🎯 Multiplicador de combo</span>
           <button id="comboToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
@@ -138,6 +182,6 @@
   </div>
 
 </div>
-<script type="module" src="main.js?build=v140-close-r5"></script>
+<script type="module" src="main.js?build=v141-audio-r6"></script>
 </body>
 </html>

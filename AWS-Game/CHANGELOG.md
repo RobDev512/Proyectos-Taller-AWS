@@ -1,5 +1,21 @@
 # AWS ORBISHOT — Changelog
 
+## v1.4.1 — Audio Update
+
+- Audio Polish r5: aumentado el volumen máximo de la música dinámica y reforzados los transitorios de lanzamiento/anclaje de flechas para que sean claramente audibles incluso con mezcla general baja.
+- El control de volumen sigue siendo independiente para música y efectos; 100% ahora representa una salida musical considerablemente más alta.
+- Cache-buster actualizado a `v141-audio-r5`.
+- Audio Polish r4: lanzamiento y anclaje de flechas rehechos con transitorios de cuerda, aire y resonancia de impacto más naturales, sin tonos arcade sostenidos.
+- Restaurado explícitamente el renderer final de v1.4.0 para conservar la UI en español, el acomodo móvil y la ayuda del Power Core dentro de su panel.
+- Cache-buster actualizado a `v141-audio-r4` para evitar módulos antiguos del navegador.
+- Música procedural dinámica para niveles normales.
+- Música procedural propia para Boss Levels, con pulso más tenso y cambio automático al entrar/salir del combate.
+- Nueva opción persistente **Música dinámica** en Configuración, independiente de los efectos de sonido.
+- SFX reforzados para disparos, impactos, Perfect Shots, Power-Ups, Power Core, Overload, Level Complete y rupturas de fases del boss.
+- Nuevo refuerzo sonoro para escombros/ruptura de Armor, Exposed y Core, además de transiciones entre niveles.
+- No se cambian hitboxes ni balance principal; `collision.js` permanece intacto.
+- Versión actualizada a `v1.4.1 - Audio Update`.
+
 ## v1.4.0 — Boss Update
 
 ### Final closeout

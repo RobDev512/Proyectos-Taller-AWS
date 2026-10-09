@@ -8,6 +8,9 @@ const PREFS_KEY = 'awsArcadePreferencesV1';
 const DEFAULTS = Object.freeze({
   difficulty: 'medium',
   sound: true,
+  music: true,
+  soundVolume: 1,
+  musicVolume: 1,
   combo: true,
   fx: true,
 });
@@ -23,6 +26,13 @@ export function loadPreferences() {
     return {
       difficulty,
       sound: typeof parsed?.sound === 'boolean' ? parsed.sound : DEFAULTS.sound,
+      music: typeof parsed?.music === 'boolean' ? parsed.music : DEFAULTS.music,
+      soundVolume: Number.isFinite(Number(parsed?.soundVolume))
+        ? Math.max(0, Math.min(1, Number(parsed.soundVolume)))
+        : DEFAULTS.soundVolume,
+      musicVolume: Number.isFinite(Number(parsed?.musicVolume))
+        ? Math.max(0, Math.min(1, Number(parsed.musicVolume)))
+        : DEFAULTS.musicVolume,
       combo: typeof parsed?.combo === 'boolean' ? parsed.combo : DEFAULTS.combo,
       fx: typeof parsed?.fx === 'boolean' ? parsed.fx : DEFAULTS.fx,
     };
@@ -37,6 +47,13 @@ export function savePreferences(prefs) {
       ? prefs.difficulty
       : DEFAULTS.difficulty,
     sound: prefs?.sound !== false,
+    music: prefs?.music !== false,
+    soundVolume: Number.isFinite(Number(prefs?.soundVolume))
+      ? Math.max(0, Math.min(1, Number(prefs.soundVolume)))
+      : DEFAULTS.soundVolume,
+    musicVolume: Number.isFinite(Number(prefs?.musicVolume))
+      ? Math.max(0, Math.min(1, Number(prefs.musicVolume)))
+      : DEFAULTS.musicVolume,
     combo: prefs?.combo !== false,
     fx: prefs?.fx !== false,
   };

@@ -2,13 +2,18 @@
  * main.js — Punto de entrada y coordinación de UI.
  */
 
-import { CONFIG, APP_VERSION, APP_CODENAME, APP_NAME } from './config.js?build=v140-close-r5';
+import { CONFIG, APP_VERSION, APP_CODENAME, APP_NAME } from './config.js?build=v141-audio-r6';
 import { createInitialState }                from './state.js';
 import { captureHighScore, loadHighScore }   from './scoring.js';
-import { registerInputHandlers }             from './input.js?build=v140-close-r5';
-import { startGameLoop }                     from './gameLoop.js?build=v140-close-r5';
+import { registerInputHandlers }             from './input.js?build=v141-audio-r6';
+import { startGameLoop }                     from './gameLoop.js?build=v141-audio-r6';
 import { hideGameOver }                      from './ui.js';
-import { setSoundEnabled }                   from './sound.js';
+import {
+  setSoundEnabled,
+  setMusicEnabled,
+  setSoundVolume,
+  setMusicVolume,
+} from './sound.js?build=v141-audio-r6';
 import { setFxEnabled }                      from './particles.js';
 import { setFeedbackFxEnabled }              from './feedback.js';
 import { setComboEnabled }                   from './combo.js';
@@ -25,6 +30,11 @@ const settingsApply   = document.getElementById('settingsApplyBtn');
 const settingsClose   = document.getElementById('settingsCloseBtn');
 const diffBtns        = document.querySelectorAll('.diff-btn');
 const soundToggle     = document.getElementById('soundToggle');
+const musicToggle     = document.getElementById('musicToggle');
+const soundVolume     = document.getElementById('soundVolume');
+const musicVolume     = document.getElementById('musicVolume');
+const soundVolumeValue= document.getElementById('soundVolumeValue');
+const musicVolumeValue= document.getElementById('musicVolumeValue');
 const comboToggle     = document.getElementById('comboToggle');
 const fxToggle        = document.getElementById('fxToggle');
 const versionLabel    = document.getElementById('versionLabel');
@@ -215,12 +225,18 @@ let state = createInitialState(loadHighScore(), currentDifficulty, stats);
 let inputController = null;
 const options = {
   sound: preferences.sound,
+  music: preferences.music,
+  soundVolume: preferences.soundVolume,
+  musicVolume: preferences.musicVolume,
   combo: preferences.combo,
   fx: preferences.fx,
 };
 
 function applyOptions() {
   setSoundEnabled(options.sound);
+  setMusicEnabled(options.music);
+  setSoundVolume(options.soundVolume);
+  setMusicVolume(options.musicVolume);
   setComboEnabled(options.combo);
   setFxEnabled(options.fx);
   setFeedbackFxEnabled(options.fx);
@@ -261,11 +277,24 @@ playAgainBtn.addEventListener('click', () => {
 // ── Configuración ─────────────────────────────────────────────────────────────
 let selectedDiff = currentDifficulty;
 
+function normalizeVolumeInput(value) {
+  return Math.max(0, Math.min(1, (Number(value) || 0) / 100));
+}
+
+function syncVolumeControl(input, label, value) {
+  const pct = Math.round(Math.max(0, Math.min(1, Number(value) || 0)) * 100);
+  input.value = String(pct);
+  label.textContent = `${pct}%`;
+}
+
 function openSettings() {
   if (state.phase === 'playing') state.phase = 'idle';
   selectedDiff = currentDifficulty;
   diffBtns.forEach(b => b.classList.toggle('selected', b.dataset.diff === selectedDiff));
   syncToggle(soundToggle, options.sound);
+  syncToggle(musicToggle, options.music);
+  syncVolumeControl(soundVolume, soundVolumeValue, options.soundVolume);
+  syncVolumeControl(musicVolume, musicVolumeValue, options.musicVolume);
   syncToggle(comboToggle, options.combo);
   syncToggle(fxToggle, options.fx);
   updateStatsPanel();
@@ -278,6 +307,9 @@ function closeSettings(apply) {
   if (apply) {
     currentDifficulty = selectedDiff;
     options.sound = soundToggle.classList.contains('on');
+    options.music = musicToggle.classList.contains('on');
+    options.soundVolume = normalizeVolumeInput(soundVolume.value);
+    options.musicVolume = normalizeVolumeInput(musicVolume.value);
     options.combo = comboToggle.classList.contains('on');
     options.fx = fxToggle.classList.contains('on');
     applyOptions();
@@ -287,8 +319,12 @@ function closeSettings(apply) {
     state = createInitialState(hs, currentDifficulty, stats);
     hideGameOver(overlayEl);
     startGame();
-  } else if (state.phase === 'idle') {
-    state.phase = 'playing';
+  } else {
+    // Los sliders tienen preescucha en vivo. Cancelar restaura los valores
+    // previamente guardados y luego reanuda la partida.
+    setSoundVolume(options.soundVolume);
+    setMusicVolume(options.musicVolume);
+    if (state.phase === 'idle') state.phase = 'playing';
   }
 }
 
@@ -320,7 +356,19 @@ function syncToggle(btn, val) {
   btn.setAttribute('aria-pressed', String(val));
 }
 
-[soundToggle, comboToggle, fxToggle].forEach(btn => {
+soundVolume.addEventListener('input', () => {
+  const value = normalizeVolumeInput(soundVolume.value);
+  soundVolumeValue.textContent = `${Math.round(value * 100)}%`;
+  setSoundVolume(value);
+});
+
+musicVolume.addEventListener('input', () => {
+  const value = normalizeVolumeInput(musicVolume.value);
+  musicVolumeValue.textContent = `${Math.round(value * 100)}%`;
+  setMusicVolume(value);
+});
+
+[soundToggle, musicToggle, comboToggle, fxToggle].forEach(btn => {
   btn.addEventListener('click', () => {
     const on = btn.classList.toggle('on');
     btn.setAttribute('aria-pressed', String(on));
