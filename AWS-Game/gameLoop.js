@@ -7,11 +7,11 @@ import {
   launchProjectile,
   advanceProjectile,
   anchorProjectile,
-} from './projectile.js?build=v140-close-r5';
+} from './projectile.js?build=v141-audio-r6';
 import { checkCollision } from './collision.js';
-import { render, drawGameOverFlash } from './renderer.js?build=v140-close-r5';
+import { render, drawGameOverFlash } from './renderer.js?build=v141-audio-r6';
 import { showGameOver } from './ui.js';
-import { getProgression } from './config.js?build=v140-close-r5';
+import { getProgression } from './config.js?build=v141-audio-r6';
 import {
   playSoundLaunch,
   playSoundAnchor,
@@ -30,7 +30,11 @@ import {
   playSoundBossBlock,
   playSoundBossPhase,
   playSoundBossDefeat,
-} from './sound.js';
+  playSoundBossBreak,
+  playSoundOverload,
+  playSoundTransition,
+  updateMusicSystem,
+} from './sound.js?build=v141-audio-r6';
 import {
   emitImpact,
   updateAndDraw,
@@ -78,7 +82,7 @@ import {
   POWER_UP_TYPES,
   resetPowerUps,
   updatePowerUps,
-} from './powerups.js?build=v140-close-r5';
+} from './powerups.js?build=v141-audio-r6';
 import {
   checkPowerCoreCrossing,
   completePowerCoreCapture,
@@ -107,7 +111,7 @@ import {
   updateBossPhaseTransition,
   updateBoss,
   updateBossIntro,
-} from './boss.js?build=v140-close-r5';
+} from './boss.js?build=v141-audio-r6';
 
 let rafId = null;
 let overlayShown = false;
@@ -162,7 +166,7 @@ function emitActivationFeedback(state, activation) {
       state.centralElement.y +
       removedVisualDistance * Math.sin(removed.angle);
 
-    emitFloatingText(fxX, fxY - 14, 'REMOVED', {
+    emitFloatingText(fxX, fxY - 14, 'ELIMINADA', {
       color,
       size: 15,
       duration: 0.76,
@@ -200,7 +204,7 @@ function emitPowerCoreSpawnFeedback(state, spawn) {
   emitBanner(
     '¡NÚCLEO DE PODER LISTO!',
     bossPickupMode
-      ? 'PICKUP SHOT • CROSS IT TO COLLECT'
+      ? 'DISPARO DE RECOGIDA • ATRAVIÉSALO PARA OBTENERLO'
       : 'CALCULA TU DISPARO • CRUZA EL NÚCLEO Y ATERRIZA',
     { color, priority: 'high', duration: 1.35 },
   );
@@ -332,6 +336,9 @@ function emitBossBlockedFeedback(state, overloadResult = null, label = '¡BLOQUE
 
   emitRing(ce.x, ce.y, color, 1.0);
   playSoundBossBlock();
+  if (overloadResult?.added > 0) {
+    playSoundOverload(Math.max(0, overloadResult.value ?? 0), Boolean(overloadResult.overloaded));
+  }
 }
 
 function emitStabilityCollisionFeedback(state, result) {
@@ -343,7 +350,7 @@ function emitStabilityCollisionFeedback(state, result) {
 
   emitBanner(
     critical ? '¡SOBRECARGA CRÍTICA!' : '¡SUBE LA SOBRECARGA!',
-    `${overload}% • 100% = GAME OVER`,
+    `${overload}% • 100% = FIN DE PARTIDA`,
     { color, priority: 'high', duration: 1.0 },
   );
 
@@ -356,6 +363,7 @@ function emitStabilityCollisionFeedback(state, result) {
 
   emitRing(ce.x, ce.y, color, 1.0);
   emitImpact(ce.x, ce.y, color, 18, 'burst');
+  playSoundOverload(overload, critical);
 }
 
 function enterGameOver(state, reason = 'COLLISION') {
@@ -407,6 +415,7 @@ function emitBossHitFeedback(state, result) {
       'burst',
     );
     playSoundBossPhase();
+    playSoundBossBreak();
   }
 }
 
@@ -439,7 +448,7 @@ function completeBossLevel(state, result) {
 
   emitBanner(
     '¡JEFE DERROTADO!',
-    `RANK ${result?.rank ?? 'D'} • BONUS +${bonus}`,
+    `RANGO ${result?.rank ?? 'D'} • BONO +${bonus}`,
     {
       color: state.boss?.accent ?? '#FFD166',
       priority: 'high',
@@ -504,6 +513,8 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
       state.score,
       state.level,
     );
+
+    updateMusicSystem(state, progression);
 
     if (flashTimer > 0) flashTimer -= deltaTime;
 
@@ -591,7 +602,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
               emitFloatingText(
                 coreHit.x,
                 coreHit.y + 34,
-                'PICKUP SHOT!',
+                '¡DISPARO DE RECOGIDA!',
                 {
                   color: POWER_UP_CONFIG.colors[coreHit.type] ?? '#FFFFFF',
                   size: 10,
@@ -659,7 +670,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             if (overload?.overloaded) {
               emitBanner(
                 '¡SOBRECARGA DEL JEFE!',
-                'TOO MANY FAILED SHOTS',
+                'DEMASIADOS TIROS FALLIDOS',
                 { color: '#FF4D4D', priority: 'high', duration: 1.2 },
               );
               enterGameOver(state, 'SOBRECARGA DEL JEFE');
@@ -956,7 +967,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             resetCombo(state);
 
             const overload = recordBossBlockedShot(state, 'collision');
-            emitBossBlockedFeedback(state, overload, 'DEFLECTED!');
+            emitBossBlockedFeedback(state, overload, '¡DESVIADO!');
             emitImpact(
               shieldX,
               shieldY,
@@ -1026,6 +1037,7 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
 
         state.lastTier = progression.tier;
 
+        playSoundTransition();
         if (state.boss?.active) {
           playSoundBossIntro();
         } else {
@@ -1076,3 +1088,4 @@ export function stopGameLoop() {
     rafId = null;
   }
 }
+

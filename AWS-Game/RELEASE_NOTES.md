@@ -1,5 +1,21 @@
 # AWS ORBISHOT — Release Notes
 
+## v1.4.1 — Audio Update
+
+**Audio Polish r4:** restaura la presentación final de v1.4.0, fuerza la recarga de módulos de UI y rehace los sonidos de lanzamiento/anclaje de flecha para que sean más físicos y menos arcade.
+
+**Enfoque:** darle una identidad sonora más completa a AWS ORBISHOT sin rehacer el gameplay.
+
+### Audio
+- Música procedural para niveles normales.
+- Música procedural exclusiva para Boss Levels.
+- Opción persistente para activar/desactivar música sin silenciar los SFX.
+- SFX ampliados para impactos, Perfect Shots, Power-Ups, Power Core, Overload, Level Complete, rupturas y transiciones.
+
+### Gameplay
+- Sin cambios en hitboxes ni balance principal.
+- `collision.js` conserva la detección `fp.radius * 0.35`.
+
 ## v1.4.0 - Boss Update
 
 ### Pulido final de cierre

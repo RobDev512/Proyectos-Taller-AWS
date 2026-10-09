@@ -9,7 +9,15 @@ https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
 ## Versión actual
 
-**v1.4.0 - Boss Update**
+**v1.4.1 - Audio Update**
+
+
+## Audio Update (v1.4.1)
+
+- Música procedural dinámica para niveles normales.
+- Música específica para Boss Levels.
+- Toggle persistente de música separado de los SFX.
+- Nuevos/reforzados efectos para impactos, Perfect Shots, Power-Ups, Power Core, Overload, Level Complete, rupturas de boss y transiciones.
 
 ## Gameplay
 
