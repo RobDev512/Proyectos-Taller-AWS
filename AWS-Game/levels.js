@@ -1,12 +1,16 @@
 /**
- * levels.js — Sistema de niveles de la v1.2.0.
+ * levels.js — Sistema de niveles de AWS ORBISHOT.
  *
- * Cada nivel pide colocar cierta cantidad de flechas. Al completar el objetivo
- * se concede un bonus, se muestra una transición breve y el siguiente nivel
- * comienza con el disco limpio, manteniendo score, récord y estadísticas.
+ * Los niveles normales mantienen la progresión clásica. Cada quinto nivel se
+ * convierte en Boss Level y usa el objetivo total definido por boss.js.
  */
 
 import { DIFFICULTIES } from './config.js';
+import {
+  getBossTarget,
+  isBossLevel,
+  prepareBossForLevel,
+} from './boss.js';
 
 export const LEVEL_COMPLETE_DELAY = 1.85;
 
@@ -19,16 +23,21 @@ const LEVEL_THEMES = [
   { name: 'Dynamo Cyan', ring: '#4DE0D2', accent: '#A0FFF7', inner: '#153233' },
 ];
 
-/** Cantidad de flechas necesarias para superar un nivel. */
+/** Cantidad de impactos necesarios para superar un nivel. */
 export function getLevelTarget(level) {
   const safeLevel = Math.max(1, Math.floor(Number(level) || 1));
+
+  if (isBossLevel(safeLevel)) {
+    return getBossTarget(safeLevel) ?? 7;
+  }
+
   return Math.min(12, 4 + safeLevel); // 5, 6, 7... hasta 12
 }
 
-/** Bonus de score al completar un nivel. */
+/** Bonus de score al completar un nivel normal. */
 export function getLevelBonus(level) {
   const safeLevel = Math.max(1, Math.floor(Number(level) || 1));
-  return 3 + safeLevel; // +4, +5, +6...
+  return 3 + safeLevel;
 }
 
 /** Paleta visual cíclica por nivel. */
@@ -60,14 +69,24 @@ export function isLevelComplete(state) {
 }
 
 /**
- * Inicia la transición de fin de nivel. No incrementa todavía state.level;
- * eso ocurre al terminar el temporizador para que el renderer pueda mostrar
- * claramente qué nivel se completó.
+ * Inicia la transición de fin de nivel. Un Boss Level puede proporcionar un
+ * bonus propio calculado por su ranking.
  */
-export function beginLevelComplete(state) {
+export function beginLevelComplete(state, bonusOverride = null) {
   ensureLevelState(state);
   state.completedLevel = state.level;
-  state.levelCompleteBonus = getLevelBonus(state.level);
+
+  // Number(null) === 0. La comprobación anterior interpretaba el valor
+  // por defecto `null` como un override real y por eso todos los niveles
+  // normales mostraban LEVEL BONUS +0. Solo aceptamos override explícito.
+  const hasOverride =
+    bonusOverride !== null &&
+    bonusOverride !== undefined &&
+    Number.isFinite(Number(bonusOverride));
+
+  state.levelCompleteBonus = hasOverride
+    ? Math.max(0, Math.floor(Number(bonusOverride)))
+    : getLevelBonus(state.level);
   state.levelTransitionTimer = LEVEL_COMPLETE_DELAY;
   state.phase = 'levelcomplete';
   state.pendingLaunch = false;
@@ -76,8 +95,8 @@ export function beginLevelComplete(state) {
 }
 
 /**
- * Prepara el siguiente nivel manteniendo score/record/estadísticas y también
- * los Active Power-Ups. Las flechas del nivel anterior desaparecen.
+ * Prepara el siguiente nivel manteniendo score/record/estadísticas, inventario,
+ * Power Charge, Power Core y efectos activos. Las flechas anteriores se limpian.
  */
 export function advanceToNextLevel(state) {
   ensureLevelState(state);
@@ -91,9 +110,6 @@ export function advanceToNextLevel(state) {
   state.pendingLaunch = false;
   state.lastReverseScore = state.score;
 
-  // La flecha preparada se reinicia al cambiar de nivel para no arrastrar,
-  // por ejemplo, un Cleanup que dejó de ser útil al vaciar el disco.
-  // Los efectos activos (Freeze, Shield y Double Score) sí se conservan.
   state.nextPowerUp = null;
   state.pendingPowerUpActivation = null;
   state.lastPreparedWasPowerUp = false;
@@ -104,9 +120,10 @@ export function advanceToNextLevel(state) {
   ce.speed = diff.baseSpeed;
   ce.baseSpeed = diff.baseSpeed;
   ce.reverseTimer = 0;
-  // Alternar el sentido inicial añade variedad sin introducir azar injusto.
   ce.direction = state.level % 2 === 0 ? -1 : 1;
 
-  state.phase = 'playing';
+  const boss = prepareBossForLevel(state);
+  state.phase = boss?.active ? 'bossintro' : 'playing';
+
   return state.level;
 }

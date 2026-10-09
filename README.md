@@ -4,9 +4,9 @@ Repositorio general para proyectos, ejercicios, pruebas y experimentos realizado
 
 ## Proyectos
 
-### AWS-Game
+### AWS ORBISHOT (`AWS-Game/`)
 
-Juego arcade desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development.
+Juego arcade de timing y precisión desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development. Desde v1.4.0 adopta oficialmente el nombre **AWS ORBISHOT**.
 
 🎮 **Jugar en línea:**
 https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
@@ -24,7 +24,7 @@ El proyecto está desarrollado con:
 
 Sin frameworks externos.
 
-### Historial de versiones de AWS-Game
+### Historial de versiones de AWS ORBISHOT
 
 - `aws-game-v1.0.0` — Workshop Build
 - `aws-game-v1.1.0` — Progression Update
@@ -33,6 +33,7 @@ Sin frameworks externos.
 - `aws-game-v1.3.0` — Power-Ups Update
 - `aws-game-v1.3.1` — Interactive Power-Ups Patch
 - `aws-game-v1.3.2` — Power Core Update
+- `aws-game-v1.4.0` — Boss Update + rebranding AWS ORBISHOT
 
 Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
@@ -45,7 +46,7 @@ Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
 En el futuro este repositorio podrá contener más proyectos realizados durante talleres o actividades relacionadas con AWS.
 
-## Sobre AWS-Game
+## Sobre AWS ORBISHOT
 
 La versión original fue creada como parte de un reto de desarrollo arcade con temática AWS.
 
@@ -55,4 +56,4 @@ Posteriormente el proyecto continuó desarrollándose fuera del workshop con nue
 
 La versión estable publicada actualmente es:
 
-**v1.3.2 - Power Core Update**
+**v1.4.0 - Boss Update**

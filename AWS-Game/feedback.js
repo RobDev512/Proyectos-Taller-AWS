@@ -1,3 +1,7 @@
+import { CONFIG } from './config.js';
+
+const LOGICAL_WIDTH = CONFIG.CANVAS_WIDTH;
+
 /**
  * feedback.js — Textos flotantes, anillos de impacto y notificaciones.
  */
@@ -74,7 +78,10 @@ function notificationPath(ctx, x, y, w, h, r) {
   }
 }
 
-export function updateAndDrawFeedback(ctx, dt) {
+export function updateAndDrawFeedback(ctx, dt, options = {}) {
+  const canvasW = Math.max(1, Number(ctx?.canvas?.dataset?.logicalWidth) || LOGICAL_WIDTH);
+  const compact = ctx?.canvas?.dataset?.layout === 'compact';
+  const sceneOffsetY = Math.max(0, Number(options.sceneOffsetY) || 0);
   for (let i = texts.length - 1; i >= 0; i--) {
     const item = texts[i];
     item.life -= dt / item.maxLife;
@@ -86,6 +93,7 @@ export function updateAndDrawFeedback(ctx, dt) {
     item.y += item.vy * dt;
 
     ctx.save();
+    ctx.translate(0, sceneOffsetY);
     ctx.globalAlpha = Math.min(1, item.life * 1.6);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -109,6 +117,7 @@ export function updateAndDrawFeedback(ctx, dt) {
     const radius = 10 + progress * 34 * ring.strength;
 
     ctx.save();
+    ctx.translate(0, sceneOffsetY);
     ctx.globalAlpha = Math.max(0, ring.life * 0.8);
     ctx.beginPath();
     ctx.arc(ring.x, ring.y, radius, 0, Math.PI * 2);
@@ -132,10 +141,11 @@ export function updateAndDrawFeedback(ctx, dt) {
       const alpha = Math.min(fadeIn, fadeOut);
 
       // Zona exclusiva entre el progreso superior y el disco.
-      const w = 270;
+      const w = compact ? 330 : 270;
       const h = 54;
-      const x = (ctx.canvas.width - w) / 2;
-      const y = 158;
+      const x = (canvasW - w) / 2;
+      // Debajo del medidor superior; no invade Level Progress / Overload.
+      const y = compact ? 188 : 178;
 
       ctx.save();
       ctx.globalAlpha = alpha;
@@ -153,7 +163,7 @@ export function updateAndDrawFeedback(ctx, dt) {
       ctx.fillStyle = banner.color;
       ctx.shadowColor = banner.color;
       ctx.shadowBlur = decorativeEnabled ? 10 : 0;
-      ctx.fillText(banner.title, ctx.canvas.width / 2, y + 21);
+      ctx.fillText(banner.title, canvasW / 2, y + 21);
 
       ctx.shadowBlur = 0;
       if (banner.subtitle) {
@@ -161,7 +171,7 @@ export function updateAndDrawFeedback(ctx, dt) {
         ctx.fillStyle = 'rgba(255,255,255,.78)';
         ctx.fillText(
           banner.subtitle,
-          ctx.canvas.width / 2,
+          canvasW / 2,
           y + 40,
         );
       }

@@ -2,7 +2,9 @@
  * powercore.js — Power Core orbitante de v1.3.2.
  *
  * El Core aparece al llenar Power Charge, cambia de tipo mientras orbita y
- * solo concede su recompensa si una flecha lo atraviesa Y después se ancla.
+ * normalmente concede su recompensa si una flecha lo atraviesa Y después se
+ * ancla. Durante bosses funciona como pickup shot independiente: atravesarlo
+ * lo recoge inmediatamente y la flecha se disipa antes de tocar la armadura.
  */
 
 import {
@@ -16,6 +18,7 @@ import {
 export const POWER_CORE_CONFIG = Object.freeze({
   radius: 15,
   orbitGap: 58,
+  bossOrbitGap: 78,
   angularSpeed: 1.55,
   typeInterval: 0.72,
   hitPaddingFactor: 0.22,
@@ -148,8 +151,18 @@ export function getPowerCorePosition(state) {
 
   if (!core?.active || !ce) return null;
 
+  const bossPickupMode = Boolean(
+    state?.boss?.active && !state.boss.defeated,
+  );
+
+  // Durante bosses el Core usa una órbita propia ligeramente exterior a la
+  // corona vulnerable. Se recoge como un tiro de pickup y no necesita quedar
+  // alineado con una pieza de armadura.
   const orbitRadius =
-    ce.radius + POWER_CORE_CONFIG.orbitGap;
+    ce.radius +
+    (bossPickupMode
+      ? POWER_CORE_CONFIG.bossOrbitGap
+      : POWER_CORE_CONFIG.orbitGap);
 
   return {
     x: ce.x + Math.cos(core.angle) * orbitRadius,
@@ -157,6 +170,7 @@ export function getPowerCorePosition(state) {
     radius: POWER_CORE_CONFIG.radius,
     orbitRadius,
     type: core.currentType,
+    bossPickupMode,
   };
 }
 

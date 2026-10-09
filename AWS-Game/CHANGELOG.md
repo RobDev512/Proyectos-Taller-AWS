@@ -1,4 +1,45 @@
-# AWS Arcade Game — Changelog
+# AWS ORBISHOT — Changelog
+
+## v1.4.0 — Boss Update
+
+### Final closeout
+- Interfaz visible en español; el codename oficial se mantiene como **Boss Update**.
+- Las superficies de las capas del jefe se reducen al romper ARMADURA/EXPUESTO y el aro destruido se desprende como escombro.
+- Mejor profundidad visual de flechas ancladas al ocultar parcialmente la punta detrás del jefe.
+- Ajustado el texto de versión en móvil para que no toque el panel inferior.
+### Final UX Polish (pre-release)
+- Mobile Power-Up buttons keep their ornamentation with segmented orbital accents so they no longer look like duplicated controls.
+- Mobile action hints now live inside the Power/Core panel instead of below it, preventing bottom-edge clipping and overlap.
+- Freeze now enables Stack Shots: collisions with anchored arrows become valid anchors while Freeze is active, without raising Overload.
+- The prepared arrow and its launch origin were moved slightly lower for clearer separation from anchored arrows.
+
+
+- Pulido final de interfaz: el Power-Up Dock se renderiza como capa UI por encima del gameplay; en móvil vertical se reemplaza por cuatro botones circulares táctiles y una barra Power/Core independiente para evitar solapamientos con el proyectil.
+- Mejorada la legibilidad móvil: botones de Power-Ups, progreso de nivel, Overload, badge de dificultad y pistas inferiores usan tipografías/tamaños mayores en layout vertical.
+- Roadmap posterior documentado: v1.4.1 se reserva para música/SFX y v1.4.2 para economía, monedas, tienda y sistema de vidas de hasta 5 corazones.
+- Normal Stability: fuera de Boss Levels, las colisiones ya no son instakill. STABILITY empieza en 100%, las colisiones restan 40%, los aciertos recuperan 8% y completar un nivel recupera 30%. Al llegar a 0% termina la partida.
+- Rebranding oficial del proyecto a **AWS ORBISHOT**, con logo transparente integrado en HUD, favicon y landing pública.
+- Cada quinto nivel se convierte en Boss Level.
+- Bosses por capas destructibles: **6 Armor → 4 Exposed → 3 Core**.
+- Las piezas de Armor/Exposed orbitan en un único sentido y también rotan sobre sí mismas.
+- Eliminado el antiguo marcador `HIT`; las propias piezas geométricas son los objetivos.
+- Seis familias visuales: Firewall, Triad, Dynamo, Prism, Pentacore y Core Nexus.
+- Transiciones de fase con screen shake, flash, flechas desprendidas y **escombros de la capa rota** que continúan cayendo hasta salir por abajo.
+- Las flechas desprendidas ya no desaparecen al finalizar la pausa de transición.
+- Durante bosses, Power Core funciona como pickup shot instantáneo y no exige alineación con la armadura.
+- Nuevo sistema **OVERLOAD** como condición de derrota propia de los Boss Levels: los tiros bloqueados y las colisiones cargan el medidor; al llegar al 100 % termina la partida.
+- Las colisiones con flechas ancladas durante bosses dejan de provocar Game Over instantáneo; Shield sigue absorbiendo la colisión y evita la carga de Overload.
+- Los aciertos descargan Overload y completar una fase descarga una cantidad adicional.
+- Boss intro, HUD de vida/fase/Overload, feedback de impacto y pantalla Boss Defeated.
+- Ranking `S/A/B/C/D` calculado con precisión, tiempo y Perfect Shots; tiempo objetivo ajustado al combate de 13 impactos.
+- Bonus de score dependiente del boss y del ranking.
+- Nuevas estadísticas persistentes: Bosses derrotados y Mejor Boss Rank.
+- Canvas HiDPI: backing store adaptado al tamaño CSS y `devicePixelRatio`, conservando coordenadas lógicas 600×700 para mejorar nitidez de texto y líneas sin alterar gameplay.
+- Input actualizado para mapear clic/tap a coordenadas lógicas aunque el backing store sea de alta resolución.
+- Corregido el bug que hacía que `LEVEL BONUS` mostrara siempre `+0`: `null` ya no se interpreta como override numérico.
+- Responsive móvil con Dock circular táctil, barra Power/Core compacta y soporte de `VisualViewport`.
+- Freeze, Double y Cleanup mantienen su comportamiento; Double no duplica daño al boss.
+- `collision.js` no se modifica; la hitbox continúa exactamente en `fp.radius * 0.35`.
 
 ## v1.3.2 — Power Core Update
 - Nuevo sistema de adquisición basado en habilidad: los Power-Ups ya no se entregan mediante Power-Up Arrows.

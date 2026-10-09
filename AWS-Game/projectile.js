@@ -21,14 +21,18 @@ import { recordShot } from './stats.js';
  * @typedef {Object} AnchoredProjectile
  * @property {number} angle
  * @property {number} distance
+ * @property {number} renderDistance
  * @property {number} radius
  * @property {string} awsIconId
  */
 
 export function launchProjectile(state, config) {
   const startX = config.CANVAS_WIDTH / 2;
+  const readyBottomFactor =
+    Number(config.READY_ARROW_BOTTOM_FACTOR) || 5;
   const startY =
-    config.CANVAS_HEIGHT - config.PROJECTILE_RADIUS * 6;
+    config.CANVAS_HEIGHT -
+    config.PROJECTILE_RADIUS * readyBottomFactor;
 
   const dx = state.centralElement.x - startX;
   const dy = state.centralElement.y - startY;
@@ -70,13 +74,32 @@ export function anchorProjectile(state) {
   const ce = state.centralElement;
   const angle = Math.atan2(fp.y - ce.y, fp.x - ce.x);
 
-  // Centro de la flecha = borde del disco + mitad de la flecha.
+  // Distancia LÓGICA: se conserva exactamente como antes para que
+  // collision.js siga comparando contra la misma posición física.
   const HALF_ARROW = fp.radius * 2.1;
   const distance = ce.radius + HALF_ARROW;
+
+  // Distancia VISUAL: durante bosses hundimos un poco la punta dentro del
+  // cuerpo para que se vea realmente clavada. Esto NO cambia la hitbox ni la
+  // posición lógica usada por collision.js.
+  const bossPhaseIndex = Math.max(
+    0,
+    Math.min(2, Math.floor(Number(state.boss?.phaseIndex) || 0)),
+  );
+  const bossEmbedFactors = [0.70, 1.05, 1.45];
+  const bossEmbed =
+    state.boss?.active && !state.boss?.defeated
+      ? fp.radius * bossEmbedFactors[bossPhaseIndex]
+      : 0;
+  const renderDistance = Math.max(
+    ce.radius,
+    distance - bossEmbed,
+  );
 
   state.anchoredProjectiles.push({
     angle,
     distance,
+    renderDistance,
     radius: fp.radius,
     awsIconId: fp.awsIconId,
   });
