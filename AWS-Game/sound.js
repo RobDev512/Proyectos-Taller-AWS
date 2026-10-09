@@ -788,5 +788,3 @@ export function playSoundTransition() {
   beep({ type: 'triangle', freq: 380, freq2: 760, duration: 0.16, gain: 0.10 });
   beep({ type: 'sine', freq: 760, freq2: 1180, duration: 0.18, gain: 0.08, delay: 0.04 });
 }
-
-

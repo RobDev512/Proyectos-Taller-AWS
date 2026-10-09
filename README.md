@@ -58,4 +58,3 @@ Posteriormente el proyecto continuó desarrollándose fuera del workshop con nue
 La versión estable publicada actualmente es:
 
 **v1.4.1 - Audio Update**
-

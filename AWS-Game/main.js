@@ -374,4 +374,3 @@ musicVolume.addEventListener('input', () => {
     btn.setAttribute('aria-pressed', String(on));
   });
 });
-
