@@ -6,10 +6,11 @@ import { CONFIG, DIFFICULTIES } from './config.js';
 import {
   createActivePowerUps,
   createPowerUpInventory,
-} from './powerups.js';
-import { createPowerCoreState } from './powercore.js';
+} from './powerups.js?build=v142-economy-r4';
+import { createPowerCoreState } from './powercore.js?build=v142-economy-r4';
 import { createInactiveBossState } from './boss.js';
 import { STABILITY_CONFIG } from './stability.js';
+import { ECONOMY_CONFIG } from './economy.js?build=v142-economy-r4';
 
 function randomIcon() {
   return CONFIG.AWS_ICONS[
@@ -19,7 +20,7 @@ function randomIcon() {
 
 /**
  * @typedef {Object} GameState
- * @property {'idle'|'playing'|'bossintro'|'levelcomplete'|'gameover'} phase
+ * @property {'idle'|'playing'|'bossintro'|'lifelost'|'levelcomplete'|'gameover'} phase
  * @property {number} score
  * @property {number} highScore
  * @property {number} level
@@ -52,8 +53,13 @@ export function createInitialState(
   highScore = 0,
   difficulty = CONFIG.DEFAULT_DIFFICULTY,
   stats = null,
+  economy = null,
 ) {
   const diff = DIFFICULTIES[difficulty] ?? DIFFICULTIES.medium;
+  const maxLives = Math.max(
+    ECONOMY_CONFIG.initialMaxLives,
+    Math.floor(Number(economy?.maxLives) || ECONOMY_CONFIG.initialMaxLives),
+  );
 
   return {
     phase: 'idle',
@@ -65,6 +71,14 @@ export function createInitialState(
     levelTransitionTimer: 0,
     levelCompleteBonus: 0,
     completedLevel: 0,
+    levelStartScore: 0,
+    levelPerfectShots: 0,
+    levelBestCombo: 1,
+    lastCoinReward: 0,
+
+    currentLives: maxLives,
+    lifeLostTimer: 0,
+    lifeLostReason: null,
 
     centralElement: {
       x: CONFIG.CANVAS_WIDTH / 2,
@@ -105,6 +119,7 @@ export function createInitialState(
     lastAnchorTime: 0,
 
     stats,
+    economy,
   };
 }
 

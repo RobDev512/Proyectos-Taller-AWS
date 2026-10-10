@@ -7,7 +7,7 @@
  * área jugable.
  */
 
-import { POWER_UP_ORDER } from './powerups.js';
+import { POWER_UP_ORDER } from './powerups.js?build=v142-economy-r4';
 
 export const POWER_UP_DOCK = Object.freeze({
   desktop: Object.freeze({

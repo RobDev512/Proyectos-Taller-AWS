@@ -1,15 +1,16 @@
-import { CONFIG, APP_VERSION, APP_CODENAME, APP_NAME } from './config.js?build=v140-close-r5';
-import { getLevelTarget, getLevelTheme, LEVEL_COMPLETE_DELAY } from './levels.js';
+import { CONFIG, APP_VERSION, APP_CODENAME, APP_NAME } from './config.js?build=v142-economy-r4';
+import { getLevelTarget, getLevelTheme, LEVEL_COMPLETE_DELAY } from './levels.js?build=v142-economy-r4';
 import {
   POWER_UP_CONFIG,
   POWER_UP_ORDER,
   canActivateStoredPowerUp,
-} from './powerups.js?build=v140-close-r5';
+  getPowerUpInventoryCap,
+} from './powerups.js?build=v142-economy-r4';
 import {
   getPowerUpChargeRect,
   getPowerUpSlotRects,
-} from './powerupUi.js?build=v140-close-r5';
-import { getPowerCorePosition } from './powercore.js';
+} from './powerupUi.js?build=v142-economy-r4';
+import { getPowerCorePosition } from './powercore.js?build=v142-economy-r4';
 import {
   BOSS_CONFIG,
   getBossPhase,
@@ -18,7 +19,7 @@ import {
   getBossPhaseBreak,
   getBossOverload,
   isBossPhaseTransitionActive,
-} from './boss.js?build=v140-close-r5';
+} from './boss.js?build=v142-economy-r4';
 import { getStability } from './stability.js';
 
 /**
@@ -307,41 +308,250 @@ function drawHudValue(ctx, label, value, x, align = 'left') {
   ctx.fillText(String(value), x, 49);
 }
 
+function drawHeartPath(ctx, cx, cy, size) {
+  const s = size;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + s * 0.42);
+  ctx.bezierCurveTo(
+    cx - s * 0.58, cy + s * 0.04,
+    cx - s * 0.55, cy - s * 0.40,
+    cx - s * 0.20, cy - s * 0.40,
+  );
+  ctx.bezierCurveTo(
+    cx - s * 0.02, cy - s * 0.40,
+    cx, cy - s * 0.20,
+    cx, cy - s * 0.12,
+  );
+  ctx.bezierCurveTo(
+    cx, cy - s * 0.20,
+    cx + s * 0.02, cy - s * 0.40,
+    cx + s * 0.20, cy - s * 0.40,
+  );
+  ctx.bezierCurveTo(
+    cx + s * 0.55, cy - s * 0.40,
+    cx + s * 0.58, cy + s * 0.04,
+    cx, cy + s * 0.42,
+  );
+  ctx.closePath();
+}
+
+function drawEconomyStatus(ctx, state, canvasW) {
+  const compact = getCanvasLayout(ctx) === 'compact';
+  const coins = Math.max(0, Math.floor(Number(state.economy?.coins) || 0));
+  const maxLives = Math.max(3, Math.floor(Number(state.economy?.maxLives) || 3));
+  const currentLives = Math.max(0, Math.min(maxLives, Math.floor(Number(state.currentLives) || 0)));
+
+  ctx.save();
+  ctx.textBaseline = 'middle';
+
+  // Monedas: indicador discreto dentro del HUD superior.
+  ctx.beginPath();
+  ctx.arc(34, 73, 5.2, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFD166';
+  ctx.shadowColor = '#FF9900';
+  ctx.shadowBlur = 5;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.arc(34, 73, 2.3, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(121,77,0,.72)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFD166';
+  ctx.textAlign = 'left';
+  ctx.fillText(String(coins), 44, 73.5);
+
+  // Hasta cinco vidas se leen como corazones individuales. Si una expansión
+  // futura supera ese valor, se compacta automáticamente a ♥ ×N.
+  const heartY = 73;
+  if (maxLives <= 5) {
+    const size = 9;
+    const gap = 3;
+    const slotW = size + gap;
+    const totalW = maxLives * slotW - gap;
+    let x = (compact ? canvasW - 34 : canvasW - 120) - totalW;
+
+    for (let i = 0; i < maxLives; i++) {
+      const cx = x + size / 2;
+      drawHeartPath(ctx, cx, heartY, size);
+      if (i < currentLives) {
+        ctx.fillStyle = '#FF6688';
+        ctx.shadowColor = '#FF4D73';
+        ctx.shadowBlur = 5;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      } else {
+        ctx.strokeStyle = 'rgba(255,102,136,.34)';
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+      }
+      x += slotW;
+    }
+  } else {
+    const cx = compact ? canvasW - 66 : canvasW - 154;
+    drawHeartPath(ctx, cx, heartY, 10);
+    ctx.fillStyle = currentLives > 0 ? '#FF6688' : 'rgba(255,102,136,.28)';
+    ctx.fill();
+    ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FF9AB0';
+    ctx.fillText(`×${currentLives}`, cx + 9, heartY + 0.5);
+  }
+
+  ctx.restore();
+}
+
+function getHudControlState(ctx, control) {
+  return {
+    hovered: ctx.canvas?.dataset?.hudHover === control,
+    pressed: ctx.canvas?.dataset?.hudPressed === control,
+  };
+}
+
+function getHudControlGeometry(ctx, control, canvasW) {
+  const compact = getCanvasLayout(ctx) === 'compact';
+
+  if (compact) {
+    return {
+      x: canvasW - 42,
+      y: control === 'shop' ? 122 : 184,
+      radius: 26,
+      compact: true,
+    };
+  }
+
+  return {
+    x: control === 'shop' ? canvasW - 80 : canvasW - 40,
+    y: 42,
+    radius: 17,
+    compact: false,
+  };
+}
+
 function drawSettingsIcon(ctx, canvasW) {
-  const x = canvasW - 45;
-  const y = 42;
-  const r = 17;
+  const geometry = getHudControlGeometry(ctx, 'settings', canvasW);
+  const { x, y, compact } = geometry;
+  const { hovered, pressed } = getHudControlState(ctx, 'settings');
+  const baseR = geometry.radius;
+  const r = pressed ? baseR - 1 : (hovered ? baseR + 1.5 : baseR);
 
   ctx.save();
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,.06)';
+  ctx.fillStyle = pressed
+    ? 'rgba(255,153,0,.25)'
+    : hovered
+      ? 'rgba(255,153,0,.16)'
+      : compact
+        ? 'rgba(13,17,23,.88)'
+        : 'rgba(255,255,255,.06)';
+  ctx.shadowColor = '#FF9900';
+  ctx.shadowBlur = pressed ? 20 : (hovered ? 14 : compact ? 5 : 0);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255,153,0,.45)';
-  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = pressed
+    ? '#FFD166'
+    : hovered
+      ? '#FFB24D'
+      : compact
+        ? 'rgba(255,153,0,.72)'
+        : 'rgba(255,153,0,.45)';
+  ctx.lineWidth = hovered || pressed ? 2 : compact ? 1.6 : 1.2;
   ctx.stroke();
+  ctx.shadowBlur = 0;
 
-  // Icono tipo "sliders" para no depender de que la fuente tenga ⚙.
-  ctx.strokeStyle = 'rgba(255,255,255,.9)';
-  ctx.lineWidth = 1.8;
+  // Icono tipo sliders.
+  const sliderCenterY = compact ? y - 5 : y;
+  const halfW = compact ? 10 : 8;
+  const spacing = compact ? 5.5 : 6;
+  ctx.strokeStyle = pressed || hovered ? '#FFFFFF' : 'rgba(255,255,255,.9)';
+  ctx.lineWidth = compact ? 2.1 : 1.8;
   ctx.lineCap = 'round';
-  const ys = [36, 42, 48];
+  const ys = [
+    sliderCenterY - spacing,
+    sliderCenterY,
+    sliderCenterY + spacing,
+  ];
   const knobs = [x + 4, x - 5, x + 2];
   for (let i = 0; i < ys.length; i++) {
     ctx.beginPath();
-    ctx.moveTo(x - 8, ys[i]);
-    ctx.lineTo(x + 8, ys[i]);
+    ctx.moveTo(x - halfW, ys[i]);
+    ctx.lineTo(x + halfW, ys[i]);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(knobs[i], ys[i], 2.1, 0, Math.PI * 2);
-    ctx.fillStyle = '#FF9900';
+    ctx.arc(knobs[i], ys[i], compact ? 2.5 : 2.1, 0, Math.PI * 2);
+    ctx.fillStyle = pressed ? '#FFF0B3' : '#FF9900';
     ctx.fill();
   }
+
+  if (compact) {
+    ctx.fillStyle = pressed || hovered ? '#FFFFFF' : 'rgba(255,255,255,.72)';
+    ctx.font = 'bold 6px "Amazon Ember", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('AJUSTES', x, y + 16);
+  }
+  ctx.restore();
+}
+
+function drawShopIcon(ctx, canvasW) {
+  const geometry = getHudControlGeometry(ctx, 'shop', canvasW);
+  const { x, y, compact } = geometry;
+  const { hovered, pressed } = getHudControlState(ctx, 'shop');
+  const baseR = geometry.radius;
+  const r = pressed ? baseR - 1 : (hovered ? baseR + 1.5 : baseR);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = pressed
+    ? 'rgba(255,209,102,.26)'
+    : hovered
+      ? 'rgba(255,209,102,.17)'
+      : compact
+        ? 'rgba(13,17,23,.88)'
+        : 'rgba(255,209,102,.075)';
+  ctx.shadowColor = '#FFD166';
+  ctx.shadowBlur = pressed ? 20 : (hovered ? 14 : compact ? 5 : 0);
+  ctx.fill();
+  ctx.strokeStyle = pressed
+    ? '#FFF0B3'
+    : hovered
+      ? '#FFD166'
+      : compact
+        ? 'rgba(255,209,102,.76)'
+        : 'rgba(255,209,102,.52)';
+  ctx.lineWidth = hovered || pressed ? 2 : compact ? 1.6 : 1.2;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Moneda central.
+  const coinY = compact ? y - 5 : y - 1;
+  ctx.beginPath();
+  ctx.arc(x, coinY, compact ? 9.5 : 7.5, 0, Math.PI * 2);
+  ctx.fillStyle = pressed ? 'rgba(255,209,102,.34)' : 'rgba(255,153,0,.18)';
+  ctx.fill();
+  ctx.strokeStyle = pressed || hovered ? '#FFF0B3' : '#FFD166';
+  ctx.lineWidth = compact ? 1.9 : 1.6;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, coinY, compact ? 5.5 : 4.3, 0, Math.PI * 2);
+  ctx.strokeStyle = pressed || hovered ? '#FFD166' : 'rgba(255,209,102,.62)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = pressed || hovered ? '#FFFFFF' : 'rgba(255,255,255,.72)';
+  ctx.font = `bold ${compact ? 6 : 5.5}px "Amazon Ember", Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('TIENDA', x, compact ? y + 16 : y + 10.5);
   ctx.restore();
 }
 
 function drawHUD(ctx, state, progression, canvasW, assets) {
   ctx.save();
+  const compact = getCanvasLayout(ctx) === 'compact';
 
   roundedRectPath(ctx, 18, 10, canvasW - 36, 78, 12);
   ctx.fillStyle = 'rgba(13,17,23,.46)';
@@ -351,7 +561,7 @@ function drawHUD(ctx, state, progression, canvasW, assets) {
   ctx.stroke();
 
   drawHudValue(ctx, 'PUNTAJE', state.score, 34, 'left');
-  drawHudValue(ctx, 'RÉCORD', state.highScore, canvasW - 78, 'right');
+  drawHudValue(ctx, 'RÉCORD', state.highScore, compact ? canvasW - 34 : canvasW - 120, 'right');
 
   const logo = assets?.brandLogo;
   if (isImageReady(logo)) {
@@ -390,7 +600,6 @@ function drawHUD(ctx, state, progression, canvasW, assets) {
   const badgeText = `${difficulty}  •  NV ${level}  •  RANGO ${tier}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  const compact = getCanvasLayout(ctx) === 'compact';
   ctx.font = `bold ${compact ? 10 : 8}px "Amazon Ember", Arial, sans-serif`;
   const tw = ctx.measureText(badgeText).width;
   roundedRectPath(ctx, canvasW / 2 - tw / 2 - 8, 66, tw + 16, 16, 8);
@@ -400,6 +609,7 @@ function drawHUD(ctx, state, progression, canvasW, assets) {
   ctx.fillText(badgeText, canvasW / 2, 74);
 
   drawSettingsIcon(ctx, canvasW);
+  drawShopIcon(ctx, canvasW);
   ctx.restore();
 }
 
@@ -543,7 +753,59 @@ function getCompactActionHint(state) {
   return 'TOCA / ESPACIO PARA DISPARAR';
 }
 
-function drawPowerUpDock(ctx, state, canvasW, canvasH) {
+function drawPowerUpIconImage(ctx, assets, type, cx, cy, size) {
+  const img = assets?.powerUpIcons?.[type];
+  if (isImageReady(img)) {
+    ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
+    return true;
+  }
+
+  // Fallback geométrico breve mientras el SVG termina de cargar.
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (type === 'freeze') {
+    ctx.beginPath();
+    ctx.moveTo(0, -size * .36); ctx.lineTo(0, size * .36);
+    ctx.moveTo(-size * .31, -size * .18); ctx.lineTo(size * .31, size * .18);
+    ctx.moveTo(-size * .31, size * .18); ctx.lineTo(size * .31, -size * .18);
+    ctx.stroke();
+  } else if (type === 'shield') {
+    ctx.beginPath();
+    ctx.moveTo(0, -size * .36);
+    ctx.lineTo(size * .28, -size * .23);
+    ctx.lineTo(size * .24, size * .14);
+    ctx.quadraticCurveTo(0, size * .38, 0, size * .38);
+    ctx.quadraticCurveTo(-size * .24, size * .14, -size * .24, size * .14);
+    ctx.lineTo(-size * .28, -size * .23);
+    ctx.closePath();
+    ctx.stroke();
+  } else if (type === 'double') {
+    ctx.beginPath();
+    ctx.moveTo(-size * .30, -size * .14); ctx.lineTo(size * .18, -size * .14);
+    ctx.lineTo(size * .02, -size * .30);
+    ctx.moveTo(size * .30, size * .14); ctx.lineTo(-size * .18, size * .14);
+    ctx.lineTo(-size * .02, size * .30);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, 0, size * .27, -.2, Math.PI * 1.55);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * .24, -size * .10);
+    ctx.lineTo(size * .31, size * .05);
+    ctx.lineTo(size * .14, size * .04);
+    ctx.stroke();
+  }
+  ctx.restore();
+  return false;
+}
+
+function drawPowerUpDock(ctx, state, canvasW, canvasH, assets) {
   if (state.phase !== 'playing') return;
 
   const layout = getCanvasLayout(ctx);
@@ -570,7 +832,6 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
   for (const slot of slots) {
     const type = slot.type;
     const color = POWER_UP_CONFIG.colors[type] ?? '#FFFFFF';
-    const label = POWER_UP_CONFIG.labels[type] ?? 'PU';
     const name = POWER_UP_CONFIG.names[type] ?? type.toUpperCase();
     const shortcut = POWER_UP_CONFIG.shortcuts[type] ?? '?';
     const count = Math.max(0, Math.floor(Number(inventory[type]) || 0));
@@ -578,6 +839,8 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
     const activatable = canActivateStoredPowerUp(state, type);
     const occupied = count > 0 || Boolean(status);
     const isHovered = hovered === type;
+    const isPressed = state.pressedPowerUpSlot === type;
+    const capacity = getPowerUpInventoryCap(state, type);
 
     ctx.save();
     ctx.globalAlpha = occupied ? 1 : 0.58;
@@ -590,14 +853,14 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
 
       // Ornamento exterior: conserva el look futurista, pero en arcos
       // separados para que se lea como decoración y no como un segundo botón.
-      if (activatable || isHovered || status) {
+      if (activatable || isHovered || isPressed || status) {
         const ornamentR = radius + 6;
         const arcOffset = Date.now() / 1800;
         ctx.strokeStyle = `${color}${activatable ? '7A' : '48'}`;
-        ctx.lineWidth = activatable ? 2.6 : 1.8;
+        ctx.lineWidth = isPressed ? 3.1 : (activatable ? 2.6 : 1.8);
         ctx.lineCap = 'round';
         ctx.shadowColor = color;
-        ctx.shadowBlur = activatable ? 11 + pulse * 5 : 7;
+        ctx.shadowBlur = isPressed ? 18 : (activatable ? 11 + pulse * 5 : 7);
 
         for (let i = 0; i < 3; i++) {
           const start = arcOffset + i * (Math.PI * 2 / 3);
@@ -637,12 +900,15 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
       gradient.addColorStop(1, 'rgba(9,14,21,.995)');
 
       ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.arc(cx, cy, isPressed ? radius - 1 : radius, 0, Math.PI * 2);
       ctx.fillStyle = gradient;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = isPressed ? 18 : (isHovered ? 12 : 0);
       ctx.fill();
       ctx.strokeStyle = occupied ? color : 'rgba(255,255,255,.18)';
-      ctx.lineWidth = activatable || isHovered ? 2.6 : 1.5;
+      ctx.lineWidth = isPressed ? 3.1 : (activatable || isHovered ? 2.6 : 1.5);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Aro interno para mejorar lectura del botón sobre fondos complejos.
       ctx.beginPath();
@@ -652,7 +918,7 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
       ctx.stroke();
 
       // Número de atajo: pequeña burbuja arriba a la izquierda.
-      const badgeR = 9;
+      const badgeR = 10;
       const shortcutX = cx - radius * 0.66;
       const badgeY = cy - radius * 0.66;
       ctx.beginPath();
@@ -673,15 +939,15 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
       ctx.strokeStyle = count > 0 ? `${color}AA` : 'rgba(255,255,255,.10)';
       ctx.lineWidth = 1;
       ctx.stroke();
-      ctx.font = 'bold 7px "Amazon Ember", Arial, sans-serif';
+      ctx.font = 'bold 6.2px "Amazon Ember", Arial, sans-serif';
       ctx.fillStyle = count > 0 ? '#FFFFFF' : 'rgba(255,255,255,.32)';
-      ctx.fillText(`×${count}`, countX, badgeY + 0.5);
+      ctx.fillText(`${count}/${capacity}`, countX, badgeY + 0.5);
 
-      // Centro: sigla grande y un único estado corto. En móvil no repetimos
-      // nombres largos para evitar texto amontonado.
-      ctx.font = 'bold 16px "Amazon Ember", Arial, sans-serif';
-      ctx.fillStyle = occupied ? color : 'rgba(255,255,255,.44)';
-      ctx.fillText(label, cx, cy - 3);
+      // Centro: icono SVG propio del potenciador.
+      ctx.save();
+      ctx.globalAlpha *= occupied ? 1 : .62;
+      drawPowerUpIconImage(ctx, assets, type, cx, cy - 5, 29);
+      ctx.restore();
 
       let mobileStatus = status;
       if (!mobileStatus) {
@@ -696,17 +962,20 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
       ctx.fillText(mobileStatus, cx, cy + 15);
     } else {
       roundedRectPath(ctx, slot.x, slot.y, slot.width, slot.height, 12);
-      ctx.fillStyle = activatable
-        ? 'rgba(13,17,23,.985)'
-        : isHovered
-          ? 'rgba(13,17,23,.96)'
-          : 'rgba(13,17,23,.92)';
+      ctx.fillStyle = isPressed
+        ? `${color}1F`
+        : activatable
+          ? 'rgba(13,17,23,.985)'
+          : isHovered
+            ? `${color}12`
+            : 'rgba(13,17,23,.92)';
+      ctx.shadowColor = color;
+      ctx.shadowBlur = isPressed ? 18 : (isHovered ? 12 : 0);
       ctx.fill();
 
       ctx.strokeStyle = occupied ? color : 'rgba(255,255,255,.14)';
-      ctx.lineWidth = activatable || isHovered ? 2.1 : 1.1;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = activatable || isHovered ? 10 : 0;
+      ctx.lineWidth = isPressed ? 2.8 : (activatable || isHovered ? 2.1 : 1.1);
+      ctx.shadowBlur = isPressed ? 18 : (activatable || isHovered ? 10 : 0);
       ctx.stroke();
       ctx.shadowBlur = 0;
 
@@ -720,14 +989,16 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
       ctx.textAlign = 'center';
       ctx.fillText(shortcut, slot.x + 18, slot.y + 19.5);
 
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 10px "Amazon Ember", Arial, sans-serif';
-      ctx.fillStyle = occupied ? color : 'rgba(255,255,255,.52)';
-      ctx.fillText(label, slot.x + 35, slot.y + 16);
+      // Icono SVG en lugar de la sigla FRZ/SHD/2X/CLR.
+      ctx.save();
+      ctx.globalAlpha *= occupied ? 1 : .62;
+      drawPowerUpIconImage(ctx, assets, type, slot.x + 47, slot.y + 15, 19);
+      ctx.restore();
 
-      ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 8.2px "Amazon Ember", Arial, sans-serif';
       ctx.fillStyle = occupied ? '#FFFFFF' : 'rgba(255,255,255,.46)';
-      ctx.fillText(name, slot.x + 35, slot.y + 29);
+      ctx.fillText(name, slot.x + 35, slot.y + 30);
 
       let subtitle = status;
       if (!subtitle && count > 0) {
@@ -738,11 +1009,11 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
       }
       if (!subtitle) subtitle = 'VACÍO';
 
-      ctx.font = 'bold 8px "Amazon Ember", Arial, sans-serif';
+      ctx.font = 'bold 7.5px "Amazon Ember", Arial, sans-serif';
       ctx.fillStyle = status ? color : 'rgba(255,255,255,.54)';
       ctx.fillText(subtitle, slot.x + 35, slot.y + 43);
 
-      const badgeW = 26;
+      const badgeW = 32;
       const badgeH = 18;
       const badgeX = slot.x + slot.width - badgeW - 7;
       const badgeY = slot.y + 8;
@@ -757,7 +1028,7 @@ function drawPowerUpDock(ctx, state, canvasW, canvasH) {
       ctx.textAlign = 'center';
       ctx.font = 'bold 9px "Amazon Ember", Arial, sans-serif';
       ctx.fillStyle = count > 0 ? '#FFFFFF' : 'rgba(255,255,255,.35)';
-      ctx.fillText(`×${count}`, badgeX + badgeW / 2, badgeY + badgeH / 2 + 0.5);
+      ctx.fillText(`${count}/${capacity}`, badgeX + badgeW / 2, badgeY + badgeH / 2 + 0.5);
     }
 
     ctx.restore();
@@ -1697,7 +1968,7 @@ function drawBossCompleteOverlay(ctx, state) {
   ctx.fillRect(0, 0, LOGICAL_WIDTH, screenH);
 
   const w = 420;
-  const h = 235;
+  const h = 252;
   const x = (LOGICAL_WIDTH - w) / 2;
   const y = (screenH - h) / 2;
   roundedRectPath(ctx, x, y, w, h, 18);
@@ -1734,11 +2005,11 @@ function drawBossCompleteOverlay(ctx, state) {
 
   ctx.font = 'bold 13px "Amazon Ember", Arial, sans-serif';
   ctx.fillStyle = '#FFD166';
-  ctx.fillText(`BONO DE JEFE +${result.bonus}`, LOGICAL_WIDTH / 2, y + 176);
+  ctx.fillText(`BONO DE JEFE +${result.bonus}  •  MONEDAS +${state.lastCoinReward ?? 0}`, LOGICAL_WIDTH / 2, y + 176);
 
   ctx.font = '10px "Amazon Ember", Arial, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,.56)';
-  ctx.fillText(`SIGUE: NIVEL ${(state.completedLevel || state.level) + 1}`, LOGICAL_WIDTH / 2, y + 207);
+  ctx.fillText(`SIGUE: NIVEL ${(state.completedLevel || state.level) + 1}`, LOGICAL_WIDTH / 2, y + 224);
   ctx.restore();
   return true;
 }
@@ -1856,7 +2127,7 @@ function drawLevelCompleteOverlay(ctx, state) {
   ctx.fillRect(0, 0, LOGICAL_WIDTH, screenH);
 
   const cardW = 360;
-  const cardH = 150;
+  const cardH = 172;
   const x = (LOGICAL_WIDTH - cardW) / 2;
   const y = (screenH - cardH) / 2 - 8;
   roundedRectPath(ctx, x, y, cardW, cardH, 18);
@@ -1881,11 +2152,67 @@ function drawLevelCompleteOverlay(ctx, state) {
 
   ctx.font = 'bold 13px "Amazon Ember", Arial, sans-serif';
   ctx.fillStyle = '#FFD166';
-  ctx.fillText(`BONO DE NIVEL  +${state.levelCompleteBonus ?? 0}`, LOGICAL_WIDTH / 2, y + 91);
+  ctx.fillText(`BONO DE NIVEL  +${state.levelCompleteBonus ?? 0}`, LOGICAL_WIDTH / 2, y + 88);
+
+  ctx.font = 'bold 12px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFD166';
+  ctx.fillText(`MONEDAS  +${state.lastCoinReward ?? 0}`, LOGICAL_WIDTH / 2, y + 113);
 
   ctx.font = '10px "Amazon Ember", Arial, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,.66)';
-  ctx.fillText(`SIGUE: NIVEL ${nextLevel}  •  ${getLevelTarget(nextLevel)} FLECHAS`, LOGICAL_WIDTH / 2, y + 120);
+  ctx.fillText(`SIGUE: NIVEL ${nextLevel}  •  ${getLevelTarget(nextLevel)} FLECHAS`, LOGICAL_WIDTH / 2, y + 142);
+  ctx.restore();
+}
+
+function drawLifeLostOverlay(ctx, state) {
+  if (state.phase !== 'lifelost') return;
+
+  const screenH = getLogicalCanvasHeight(ctx);
+  const remaining = Math.max(0, Number(state.lifeLostTimer) || 0);
+  const progress = 1 - Math.min(1, remaining / 1.35);
+  const pulse = 0.7 + Math.sin(progress * Math.PI) * 0.3;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(8,12,18,.62)';
+  ctx.fillRect(0, 0, LOGICAL_WIDTH, screenH);
+
+  const w = 330;
+  const h = 138;
+  const x = (LOGICAL_WIDTH - w) / 2;
+  const y = (screenH - h) / 2 - 4;
+  roundedRectPath(ctx, x, y, w, h, 18);
+  ctx.fillStyle = 'rgba(20,25,36,.96)';
+  ctx.fill();
+  ctx.strokeStyle = '#FF6688';
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = pulse;
+  ctx.shadowColor = '#FF4D73';
+  ctx.shadowBlur = 16;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 14px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FF9AB0';
+  ctx.fillText('CONTINUACIÓN', LOGICAL_WIDTH / 2, y + 28);
+
+  ctx.font = 'bold 28px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText('¡VIDA PERDIDA!', LOGICAL_WIDTH / 2, y + 62);
+
+  ctx.font = 'bold 13px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = '#FF7799';
+  ctx.fillText(
+    `${state.currentLives} ${state.currentLives === 1 ? 'VIDA RESTANTE' : 'VIDAS RESTANTES'}`,
+    LOGICAL_WIDTH / 2,
+    y + 94,
+  );
+
+  ctx.font = '10px "Amazon Ember", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.58)';
+  ctx.fillText(`REINICIANDO NIVEL ${state.level}…`, LOGICAL_WIDTH / 2, y + 117);
   ctx.restore();
 }
 
@@ -1923,6 +2250,7 @@ export function render(ctx, state, assets, progression = null) {
 
   // HUD dentro del canvas (evita que se desalineé al escalar responsivamente)
   drawHUD(ctx, state, progression, LOGICAL_WIDTH, assets);
+  drawEconomyStatus(ctx, state, LOGICAL_WIDTH);
 
   if (progression && progression.tier > 0) {
     drawTierIndicator(ctx, LOGICAL_WIDTH, progression.tier);
@@ -1977,10 +2305,11 @@ export function render(ctx, state, assets, progression = null) {
   // El Dock se dibuja DESPUÉS del gameplay. Esto lo convierte en una capa UI
   // real: flechas, Power Cores y efectos pueden pasar por detrás, pero nunca
   // tapar botones, cantidades ni textos.
-  drawPowerUpDock(ctx, state, LOGICAL_WIDTH, screenH);
+  drawPowerUpDock(ctx, state, LOGICAL_WIDTH, screenH, assets);
 
   drawBottomHint(ctx, state, LOGICAL_WIDTH, screenH);
   drawBossIntroOverlay(ctx, state);
+  drawLifeLostOverlay(ctx, state);
   if (!drawBossCompleteOverlay(ctx, state)) {
     drawLevelCompleteOverlay(ctx, state);
   }

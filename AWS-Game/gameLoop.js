@@ -7,11 +7,11 @@ import {
   launchProjectile,
   advanceProjectile,
   anchorProjectile,
-} from './projectile.js?build=v141-audio-r6';
+} from './projectile.js?build=v142-economy-r4';
 import { checkCollision } from './collision.js';
-import { render, drawGameOverFlash } from './renderer.js?build=v141-audio-r6';
+import { render, drawGameOverFlash } from './renderer.js?build=v142-economy-r5';
 import { showGameOver } from './ui.js';
-import { getProgression } from './config.js?build=v141-audio-r6';
+import { getProgression } from './config.js?build=v142-economy-r4';
 import {
   playSoundLaunch,
   playSoundAnchor,
@@ -34,7 +34,7 @@ import {
   playSoundOverload,
   playSoundTransition,
   updateMusicSystem,
-} from './sound.js?build=v141-audio-r6';
+} from './sound.js?build=v142-economy-r4';
 import {
   emitImpact,
   updateAndDraw,
@@ -70,10 +70,11 @@ import {
   isLevelComplete,
   beginLevelComplete,
   advanceToNextLevel,
-} from './levels.js';
+} from './levels.js?build=v142-economy-r4';
 import {
   activateStoredPowerUp,
   addPowerUpCharge,
+  createActivePowerUps,
   consumeDoubleScoreHit,
   consumeShield,
   isDoubleScoreActive,
@@ -82,14 +83,14 @@ import {
   POWER_UP_TYPES,
   resetPowerUps,
   updatePowerUps,
-} from './powerups.js?build=v141-audio-r6';
+} from './powerups.js?build=v142-economy-r4';
 import {
   checkPowerCoreCrossing,
   completePowerCoreCapture,
   resetPowerCore,
   trySpawnPowerCore,
   updatePowerCore,
-} from './powercore.js';
+} from './powercore.js?build=v142-economy-r4';
 import {
   damageStability,
   recoverStability,
@@ -106,16 +107,24 @@ import {
   refundBossUtilityShot,
   registerBossHit,
   isBossPhaseTransitionActive,
+  prepareBossForLevel,
   updateBossDetachedArrows,
   updateBossDetachedDebris,
   updateBossPhaseTransition,
   updateBoss,
   updateBossIntro,
-} from './boss.js?build=v141-audio-r6';
+} from './boss.js?build=v142-economy-r4';
+import {
+  awardCoins,
+  getNormalLevelCoinReward,
+  getBossCoinReward,
+} from './economy.js?build=v142-economy-r4';
 
 let rafId = null;
 let overlayShown = false;
 let flashTimer = 0;
+
+const LIFE_LOST_DELAY = 1.35;
 
 const SERVICE_COLORS = {
   lambda:'#E8702E',
@@ -366,18 +375,79 @@ function emitStabilityCollisionFeedback(state, result) {
   playSoundOverload(overload, critical);
 }
 
-function enterGameOver(state, reason = 'COLLISION') {
-  if (state.phase === 'gameover') return;
+function prepareRetryAfterLifeLoss(state) {
+  state.score = Math.max(0, Number(state.levelStartScore) || 0);
+  state.levelHits = 0;
+  state.levelPerfectShots = 0;
+  state.levelBestCombo = 1;
+  state.lastCoinReward = 0;
+  state.levelTransitionTimer = 0;
+  state.levelCompleteBonus = 0;
+  state.completedLevel = 0;
 
-  state.phase = 'gameover';
-  state.gameOverReason = reason;
-  state.gameOverTimestamp = performance.now();
+  state.anchoredProjectiles = [];
+  state.flyingProjectile = null;
+  state.pendingLaunch = false;
+  state.pendingPowerUpActivation = null;
+  state.hoveredPowerUpSlot = null;
+  state.detachedBossArrows = [];
+  state.detachedBossDebris = [];
+
+  // Una vida reinicia el intento del nivel, pero conserva inventario y Power
+  // Charge para que se sienta como continuación de la misma run.
+  state.activePowerUps = createActivePowerUps();
+  resetPowerCore(state);
+  restoreStability(state);
+  resetCombo(state);
+
+  const ce = state.centralElement;
+  ce.angle = 0;
+  ce.speed = ce.baseSpeed;
+  ce.reverseTimer = 0;
+  ce.direction = state.level % 2 === 0 ? -1 : 1;
+  state.lastReverseScore = state.score;
+
+  const boss = prepareBossForLevel(state);
+  state.lifeLostTimer = 0;
+  state.lifeLostReason = null;
+  state.phase = boss?.active ? 'bossintro' : 'playing';
+
+  return boss;
+}
+
+function enterGameOver(state, reason = 'COLLISION') {
+  if (state.phase === 'gameover' || state.phase === 'lifelost') return;
+
+  const livesBefore = Math.max(0, Math.floor(Number(state.currentLives) || 0));
+  state.currentLives = Math.max(0, livesBefore - 1);
   state.pendingPowerUpActivation = null;
   state.pendingLaunch = false;
   state.flyingProjectile = null;
 
   overlayShown = false;
   flashTimer = 0.25;
+
+  if (state.currentLives > 0) {
+    state.phase = 'lifelost';
+    state.lifeLostTimer = LIFE_LOST_DELAY;
+    state.lifeLostReason = reason;
+    state.gameOverReason = null;
+    state.activePowerUps = createActivePowerUps();
+    resetPowerCore(state);
+    resetCombo(state);
+
+    emitBanner(
+      '¡VIDA PERDIDA!',
+      `${state.currentLives} ${state.currentLives === 1 ? 'VIDA RESTANTE' : 'VIDAS RESTANTES'} • REINTENTANDO NIVEL ${state.level}`,
+      { color: '#FF7799', priority: 'high', duration: 1.15 },
+    );
+    playSoundTransition();
+    return;
+  }
+
+  state.phase = 'gameover';
+  state.gameOverReason = reason;
+  state.gameOverTimestamp = performance.now();
 
   resetPowerUps(state);
   resetPowerCore(state);
@@ -428,6 +498,12 @@ function completeBossLevel(state, result) {
   resetCombo(state);
   restoreStability(state);
 
+  const coinReward = awardCoins(
+    state.economy,
+    getBossCoinReward(result?.rank ?? 'D'),
+  );
+  state.lastCoinReward = coinReward;
+
   addPowerUpCharge(
     state,
     POWER_UP_CONFIG.levelCompleteCharge,
@@ -448,7 +524,7 @@ function completeBossLevel(state, result) {
 
   emitBanner(
     '¡JEFE DERROTADO!',
-    `RANGO ${result?.rank ?? 'D'} • BONO +${bonus}`,
+    `RANGO ${result?.rank ?? 'D'} • BONO +${bonus} • MONEDAS +${coinReward}`,
     {
       color: state.boss?.accent ?? '#FFD166',
       priority: 'high',
@@ -728,10 +804,15 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             updateHighScore(state);
 
             if (state.stats) recordPerfect(state.stats);
+            state.levelPerfectShots = Math.max(0, Math.floor(Number(state.levelPerfectShots) || 0)) + 1;
             playSoundPerfect();
           }
 
           const mult = registerAnchor(state);
+          state.levelBestCombo = Math.max(
+            Math.max(1, Math.floor(Number(state.levelBestCombo) || 1)),
+            mult,
+          );
 
           if (state.stats) recordCombo(state.stats, mult);
 
@@ -869,6 +950,11 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
             completeBossLevel(state, bossHitResult.result);
           } else if (isLevelComplete(state) && !state.boss?.active) {
             const completed = state.level;
+            const coinReward = awardCoins(
+              state.economy,
+              getNormalLevelCoinReward(state),
+            );
+            state.lastCoinReward = coinReward;
             const bonus = beginLevelComplete(state);
 
             state.score += bonus;
@@ -894,6 +980,13 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
               '#FF9900',
               58,
               'confetti',
+            );
+
+            emitFloatingText(
+              ce.x,
+              ce.y + ce.radius + 42,
+              `MONEDAS +${coinReward}`,
+              { color: '#FFD166', size: 13, duration: 0.9, vy: -18 },
             );
 
             playSoundLevelComplete();
@@ -1003,6 +1096,28 @@ export function startGameLoop(ctx, state, assets, config, overlayEl) {
         }
       }
 
+      }
+    } else if (state.phase === 'lifelost') {
+      state.lifeLostTimer = Math.max(0, (Number(state.lifeLostTimer) || 0) - deltaTime);
+
+      if (state.lifeLostTimer <= 0) {
+        const boss = prepareRetryAfterLifeLoss(state);
+        progression = getProgression(
+          state.difficulty,
+          state.score,
+          state.level,
+        );
+        state.lastTier = progression.tier;
+
+        if (boss?.active) {
+          playSoundBossIntro();
+        } else {
+          emitBanner(
+            `NIVEL ${state.level} • REINTENTO`,
+            `${getLevelTarget(state.level)} FLECHAS • ${state.currentLives} ${state.currentLives === 1 ? 'VIDA' : 'VIDAS'}`,
+            { color: '#FF7799', priority: 'high', duration: 1.15 },
+          );
+        }
       }
     } else if (state.phase === 'bossintro') {
       updateRotation(state, deltaTime * 0.35, progression);

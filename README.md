@@ -35,6 +35,7 @@ Sin frameworks externos.
 - `aws-game-v1.3.2` — Power Core Update
 - `aws-game-v1.4.0` — Boss Update + rebranding AWS ORBISHOT
 - `aws-game-v1.4.1` — Audio Update / Soundtrack Patch
+- `aws-game-v1.4.2` — Economy & Lives Update
 
 Las versiones anteriores se conservan mediante tags de Git en este repositorio.
 
@@ -53,8 +54,8 @@ La versión original fue creada como parte de un reto de desarrollo arcade con t
 
 La mecánica consiste en lanzar proyectiles hacia un elemento central en rotación evitando colisionar con los proyectiles ya colocados.
 
-Posteriormente el proyecto continuó desarrollándose fuera del workshop con nuevas versiones, sistemas de progresión, estadísticas, niveles, Power-Ups y otras mejoras.
+Posteriormente el proyecto continuó desarrollándose fuera del workshop con nuevas versiones, sistemas de progresión, estadísticas, niveles, Power-Ups, bosses, audio, economía y otras mejoras.
 
 La versión estable publicada actualmente es:
 
-**v1.4.1 - Audio Update**
+**v1.4.2 - Economy & Lives Update**

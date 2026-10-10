@@ -88,12 +88,22 @@ export function isPowerUpType(type) {
   return VALID_POWER_UP_TYPES.has(type);
 }
 
-function sanitizeCount(value) {
+export function getPowerUpInventoryCap(state, type) {
+  if (!isPowerUpType(type)) return POWER_UP_CONFIG.inventoryMaxPerType;
+  const raw = Number(state?.economy?.powerUpCaps?.[type]);
+  if (!Number.isFinite(raw)) return POWER_UP_CONFIG.inventoryMaxPerType;
+  return Math.max(
+    POWER_UP_CONFIG.inventoryMaxPerType,
+    Math.min(99, Math.floor(raw)),
+  );
+}
+
+function sanitizeCount(value, max = POWER_UP_CONFIG.inventoryMaxPerType) {
   const n = Number(value);
   if (!Number.isFinite(n)) return 0;
 
   return Math.min(
-    POWER_UP_CONFIG.inventoryMaxPerType,
+    Math.max(POWER_UP_CONFIG.inventoryMaxPerType, Math.floor(Number(max) || 0)),
     Math.max(0, Math.floor(n)),
   );
 }
@@ -140,7 +150,10 @@ export function sanitizePowerUpState(state) {
 
   state.powerUpInventory = createPowerUpInventory();
   for (const type of POWER_UP_ORDER) {
-    state.powerUpInventory[type] = sanitizeCount(inventory[type]);
+    state.powerUpInventory[type] = sanitizeCount(
+      inventory[type],
+      getPowerUpInventoryCap(state, type),
+    );
   }
 
   const charge = Number(state.powerUpCharge);
@@ -182,11 +195,10 @@ export function getStorablePowerUps(state) {
       ? state.powerUpInventory
       : createPowerUpInventory();
 
-  return POWER_UP_ORDER.filter(
-    type =>
-      sanitizeCount(inventory[type]) <
-      POWER_UP_CONFIG.inventoryMaxPerType,
-  );
+  return POWER_UP_ORDER.filter(type => {
+    const capacity = getPowerUpInventoryCap(state, type);
+    return sanitizeCount(inventory[type], capacity) < capacity;
+  });
 }
 
 /**
@@ -218,7 +230,8 @@ export function collectPowerUp(state, type) {
   sanitizePowerUpState(state);
 
   const current = state.powerUpInventory[type];
-  if (current >= POWER_UP_CONFIG.inventoryMaxPerType) {
+  const capacity = getPowerUpInventoryCap(state, type);
+  if (current >= capacity) {
     return {
       type,
       collected: false,

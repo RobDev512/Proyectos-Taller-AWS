@@ -10,8 +10,8 @@
 import {
   POWER_UP_ORDER,
   canActivateStoredPowerUp,
-} from './powerups.js?build=v140-close-r5';
-import { getPowerUpSlotAtPoint } from './powerupUi.js?build=v140-close-r5';
+} from './powerups.js?build=v142-economy-r4';
+import { getPowerUpSlotAtPoint } from './powerupUi.js?build=v142-economy-r4';
 
 function getLogicalCanvasSize(canvas) {
   return {
@@ -33,12 +33,36 @@ function getLayout(canvas) {
   return canvas.dataset.layout === 'compact' ? 'compact' : 'desktop';
 }
 
-function isSettingsPoint(canvas, x, y) {
+function getHudControlGeometry(canvas, control) {
   const { width } = getLogicalCanvasSize(canvas);
-  const cx = width - 45;
-  const cy = 42;
-  const r  = 24;
+  const compact = getLayout(canvas) === 'compact';
+
+  if (compact) {
+    return {
+      cx: width - 42,
+      cy: control === 'shop' ? 122 : 184,
+      r: 31,
+    };
+  }
+
+  return {
+    cx: control === 'shop' ? width - 80 : width - 40,
+    cy: 42,
+    r: 20,
+  };
+}
+
+function isHudControlPoint(canvas, control, x, y) {
+  const { cx, cy, r } = getHudControlGeometry(canvas, control);
   return Math.hypot(x - cx, y - cy) <= r;
+}
+
+function isSettingsPoint(canvas, x, y) {
+  return isHudControlPoint(canvas, 'settings', x, y);
+}
+
+function isShopPoint(canvas, x, y) {
+  return isHudControlPoint(canvas, 'shop', x, y);
 }
 
 function shortcutToPowerUp(code, key = '') {
@@ -99,9 +123,42 @@ export function registerInputHandlers(canvas, state, abortController) {
     }
   }, { signal });
 
-  canvas.addEventListener('pointerdown', () => {
+  canvas.addEventListener('pointerdown', (event) => {
     canvas.focus();
+    const { x, y } = toCanvasPoint(canvas, event);
+
+    const { width: logicalWidth, height: logicalHeight } = getLogicalCanvasSize(canvas);
+    const powerUpType = getPowerUpSlotAtPoint(
+      logicalWidth,
+      x,
+      y,
+      getLayout(canvas),
+      logicalHeight,
+    );
+
+    if (state.phase === 'playing' && isSettingsPoint(canvas, x, y)) {
+      canvas.dataset.hudPressed = 'settings';
+      state.pressedPowerUpSlot = null;
+    } else if (state.phase === 'playing' && isShopPoint(canvas, x, y)) {
+      canvas.dataset.hudPressed = 'shop';
+      state.pressedPowerUpSlot = null;
+    } else if (state.phase === 'playing' && powerUpType) {
+      delete canvas.dataset.hudPressed;
+      state.pressedPowerUpSlot = powerUpType;
+      state.hoveredPowerUpSlot = powerUpType;
+    } else {
+      delete canvas.dataset.hudPressed;
+      state.pressedPowerUpSlot = null;
+    }
   }, { signal });
+
+  const clearHudPressed = () => {
+    delete canvas.dataset.hudPressed;
+    state.pressedPowerUpSlot = null;
+  };
+
+  canvas.addEventListener('pointerup', clearHudPressed, { signal });
+  canvas.addEventListener('pointercancel', clearHudPressed, { signal });
 
   canvas.addEventListener('click', (event) => {
     const { x, y } = toCanvasPoint(canvas, event);
@@ -109,6 +166,11 @@ export function registerInputHandlers(canvas, state, abortController) {
 
     if (isSettingsPoint(canvas, x, y) && state.phase === 'playing') {
       canvas.dispatchEvent(new CustomEvent('settings-open'));
+      return;
+    }
+
+    if (isShopPoint(canvas, x, y) && state.phase === 'playing') {
+      canvas.dispatchEvent(new CustomEvent('shop-open'));
       return;
     }
 
@@ -149,16 +211,31 @@ export function registerInputHandlers(canvas, state, abortController) {
       state.phase === 'playing' &&
       isSettingsPoint(canvas, x, y);
 
+    const overShop =
+      state.phase === 'playing' &&
+      isShopPoint(canvas, x, y);
+
     const overPowerUp =
       state.phase === 'playing' &&
       powerUpType !== null;
 
+    if (overSettings) {
+      canvas.dataset.hudHover = 'settings';
+    } else if (overShop) {
+      canvas.dataset.hudHover = 'shop';
+    } else {
+      delete canvas.dataset.hudHover;
+    }
+
     canvas.style.cursor =
-      overSettings || overPowerUp ? 'pointer' : 'default';
+      overSettings || overShop || overPowerUp ? 'pointer' : 'default';
   }, { signal });
 
   canvas.addEventListener('mouseleave', () => {
     state.hoveredPowerUpSlot = null;
+    state.pressedPowerUpSlot = null;
+    delete canvas.dataset.hudHover;
+    delete canvas.dataset.hudPressed;
     canvas.style.cursor = 'default';
   }, { signal });
 

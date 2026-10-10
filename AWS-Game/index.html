@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>AWS ORBISHOT</title>
   <link rel="icon" type="image/png" href="assets/branding/aws-orbishot-logo.png"/>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css?build=v142-economy-r5"/>
   <style>
     html, body {
       width: 100%;
@@ -67,7 +67,7 @@
       }
     }
     @media (max-width: 520px), (max-height: 700px) {
-      #gameOverCard, #settingsCard {
+      #gameOverCard, #settingsCard, #shopCard {
         max-height: calc(100% - 16px);
         overflow-y: auto;
       }
@@ -100,6 +100,10 @@
         </div>
       </div>
       <div class="gameover-level">Nivel alcanzado: <strong id="finalLevel">1</strong></div>
+      <div class="gameover-economy">
+        <span>🪙 <strong id="finalCoins">0</strong> monedas</span>
+        <span>♥ Capacidad <strong id="finalMaxLives">3</strong></span>
+      </div>
       <button id="playAgainBtn" type="button">Jugar de nuevo</button>
     </div>
   </div>
@@ -107,35 +111,39 @@
   <!-- Settings -->
   <div id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div id="settingsCard">
-      <h2 id="settingsTitle">⚙ AWS ORBISHOT · Configuración</h2>
+      <h2 id="settingsTitle" class="settings-title-with-icon">
+        <img src="assets/ui/settings-gear.svg" alt="" aria-hidden="true"/>
+        <span>AWS ORBISHOT · Configuración</span>
+      </h2>
       <div class="settings-section">
         <p class="settings-label">Dificultad</p>
         <div id="difficultyPicker">
           <button class="diff-btn" data-diff="easy">
-            <span class="diff-emoji">☁️</span>
+            <span class="diff-icon"><img src="assets/ui/difficulty-easy.svg" alt="" aria-hidden="true"/></span>
             <span class="diff-name">Fácil</span>
             <span class="diff-desc">Empieza tranquilo… el disco aprende</span>
           </button>
           <button class="diff-btn" data-diff="medium">
-            <span class="diff-emoji">⚡</span>
+            <span class="diff-icon"><img src="assets/ui/difficulty-medium.svg" alt="" aria-hidden="true"/></span>
             <span class="diff-name">Medio</span>
             <span class="diff-desc">Inversiones que se vuelven más frecuentes</span>
           </button>
           <button class="diff-btn" data-diff="hard">
-            <span class="diff-emoji">🔥</span>
+            <span class="diff-icon"><img src="assets/ui/difficulty-hard.svg" alt="" aria-hidden="true"/></span>
             <span class="diff-name">Difícil</span>
             <span class="diff-desc">Caos creciente. Cada flecha cuenta</span>
           </button>
         </div>
+        <p class="settings-inline-note">Cambiar dificultad inicia una run nueva; las demás opciones se aplican sin reiniciar.</p>
       </div>
       <div class="settings-section">
         <p class="settings-label">Opciones</p>
         <div class="settings-toggle-row">
-          <span class="settings-toggle-label">🔊 Efectos de sonido</span>
+          <span class="settings-toggle-label"><img src="assets/ui/option-sound.svg" alt="" aria-hidden="true"/>Efectos de sonido</span>
           <button id="soundToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
         <div class="settings-toggle-row">
-          <span class="settings-toggle-label">🎵 Música dinámica</span>
+          <span class="settings-toggle-label"><img src="assets/ui/option-music.svg" alt="" aria-hidden="true"/>Música dinámica</span>
           <button id="musicToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
         <div class="settings-volume-row">
@@ -149,11 +157,11 @@
           <span id="musicVolumeValue" class="settings-volume-value">100%</span>
         </div>
         <div class="settings-toggle-row">
-          <span class="settings-toggle-label">🎯 Multiplicador de combo</span>
+          <span class="settings-toggle-label"><img src="assets/ui/option-combo.svg" alt="" aria-hidden="true"/>Multiplicador de combo</span>
           <button id="comboToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
         <div class="settings-toggle-row">
-          <span class="settings-toggle-label">✨ Efectos visuales</span>
+          <span class="settings-toggle-label"><img src="assets/ui/option-fx.svg" alt="" aria-hidden="true"/>Efectos visuales</span>
           <button id="fxToggle" class="toggle-btn on" aria-pressed="true"></button>
         </div>
       </div>
@@ -174,14 +182,116 @@
         </div>
       </div>
       <div class="settings-actions">
-        <button id="settingsApplyBtn" type="button">Aplicar y reiniciar</button>
+        <button id="settingsApplyBtn" type="button">Aplicar cambios</button>
         <button id="settingsCloseBtn" type="button" class="btn-secondary">Cerrar</button>
       </div>
       <p id="versionLabel" class="version-label"></p>
     </div>
   </div>
 
+  <!-- Shop -->
+  <div id="shopOverlay" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+    <div id="shopCard">
+      <div class="shop-header">
+        <div>
+          <span class="shop-kicker">Economía de la run</span>
+          <h2 id="shopTitle">Tienda</h2>
+        </div>
+        <span id="shopCoinBalance" class="shop-coin-balance">🪙 0</span>
+      </div>
+
+      <div class="shop-life-summary">
+        <div>
+          <span class="shop-summary-label">Vidas de esta run</span>
+          <strong id="shopLivesValue">3 / 3</strong>
+        </div>
+        <span id="shopMessage" class="shop-message" aria-live="polite"></span>
+      </div>
+
+      <section class="shop-group" aria-labelledby="shopLivesHeading">
+        <div class="shop-group-heading">
+          <span id="shopLivesHeading">Vidas</span>
+          <small>Recupera o amplía tu margen</small>
+        </div>
+        <div class="shop-grid shop-grid-lives">
+          <button id="buyLifeBtn" class="shop-item shop-life-item" type="button">
+            <span class="shop-item-icon">♥</span>
+            <span class="shop-item-copy"><strong>Recargar vida</strong><small>+1 corazón de esta run</small></span>
+            <span id="buyLifeCost" class="shop-item-cost">🪙 20</span>
+          </button>
+          <button id="upgradeLivesBtn" class="shop-item shop-life-item" type="button">
+            <span class="shop-item-icon">♥+</span>
+            <span class="shop-item-copy"><strong>Ampliar capacidad</strong><small>Mejora permanente +1</small></span>
+            <span id="upgradeLivesCost" class="shop-item-cost">🪙 60</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="shop-group" aria-labelledby="shopPowerHeading">
+        <div class="shop-group-heading">
+          <span id="shopPowerHeading">Potenciadores</span>
+          <small>Se entregan a la run actual</small>
+        </div>
+        <div class="shop-grid shop-grid-power">
+          <button class="shop-item shop-power" data-shop-power="freeze" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-freeze.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Congelar +1</strong><small>Una carga de Freeze</small></span>
+            <span class="shop-item-cost">🪙 12</span>
+          </button>
+          <button class="shop-item shop-power" data-shop-power="shield" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-shield.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Escudo +1</strong><small>Una carga de Shield</small></span>
+            <span class="shop-item-cost">🪙 14</span>
+          </button>
+          <button class="shop-item shop-power" data-shop-power="double" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-double.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Doble +1</strong><small>Una carga de Double</small></span>
+            <span class="shop-item-cost">🪙 16</span>
+          </button>
+          <button class="shop-item shop-power" data-shop-power="cleanup" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-cleanup.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Limpieza +1</strong><small>Una carga de Cleanup</small></span>
+            <span class="shop-item-cost">🪙 18</span>
+          </button>
+        </div>
+      </section>
+
+
+      <section class="shop-group" aria-labelledby="shopCapacityHeading">
+        <div class="shop-group-heading">
+          <span id="shopCapacityHeading">Capacidad de potenciadores</span>
+          <small>Mejoras permanentes</small>
+        </div>
+        <div class="shop-grid shop-grid-capacity">
+          <button class="shop-item shop-capacity" data-shop-capacity="freeze" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-freeze.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Capacidad Congelar</strong><small data-capacity-label="freeze">x2 → x3</small></span>
+            <span class="shop-item-cost" data-capacity-cost="freeze">🪙 25</span>
+          </button>
+          <button class="shop-item shop-capacity" data-shop-capacity="shield" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-shield.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Capacidad Escudo</strong><small data-capacity-label="shield">x2 → x3</small></span>
+            <span class="shop-item-cost" data-capacity-cost="shield">🪙 25</span>
+          </button>
+          <button class="shop-item shop-capacity" data-shop-capacity="double" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-double.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Capacidad Doble</strong><small data-capacity-label="double">x2 → x3</small></span>
+            <span class="shop-item-cost" data-capacity-cost="double">🪙 25</span>
+          </button>
+          <button class="shop-item shop-capacity" data-shop-capacity="cleanup" type="button">
+            <span class="shop-item-icon"><img src="assets/ui/power-cleanup.svg" alt="" aria-hidden="true"/></span>
+            <span class="shop-item-copy"><strong>Capacidad Limpieza</strong><small data-capacity-label="cleanup">x2 → x3</small></span>
+            <span class="shop-item-cost" data-capacity-cost="cleanup">🪙 25</span>
+          </button>
+        </div>
+      </section>
+
+      <p class="shop-note">v1.4.2 amplía vidas de 3 a 5 y cada potenciador de x2 a x5. Ambos sistemas quedan preparados para futuras expansiones.</p>
+      <button id="shopCloseBtn" class="shop-close-btn" type="button">Cerrar tienda</button>
+    </div>
+  </div>
+
 </div>
-<script type="module" src="main.js?build=v141-audio-r6"></script>
+<script type="module" src="main.js?build=v142-economy-r5"></script>
 </body>
 </html>

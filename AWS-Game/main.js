@@ -2,23 +2,33 @@
  * main.js — Punto de entrada y coordinación de UI.
  */
 
-import { CONFIG, APP_VERSION, APP_CODENAME, APP_NAME } from './config.js?build=v141-audio-r6';
-import { createInitialState }                from './state.js';
+import { CONFIG, APP_VERSION, APP_CODENAME, APP_NAME } from './config.js?build=v142-economy-r4';
+import { createInitialState }                from './state.js?build=v142-economy-r4';
 import { captureHighScore, loadHighScore }   from './scoring.js';
-import { registerInputHandlers }             from './input.js?build=v141-audio-r6';
-import { startGameLoop }                     from './gameLoop.js?build=v141-audio-r6';
-import { hideGameOver }                      from './ui.js';
+import { registerInputHandlers }             from './input.js?build=v142-economy-r4';
+import { startGameLoop }                     from './gameLoop.js?build=v142-economy-r5';
+import { hideGameOver }                      from './ui.js?build=v142-economy-r4';
 import {
   setSoundEnabled,
   setMusicEnabled,
   setSoundVolume,
   setMusicVolume,
-} from './sound.js?build=v141-audio-r6';
+} from './sound.js?build=v142-economy-r4';
 import { setFxEnabled }                      from './particles.js';
 import { setFeedbackFxEnabled }              from './feedback.js';
 import { setComboEnabled }                   from './combo.js';
 import { loadPreferences, savePreferences }  from './preferences.js';
 import { loadStats, getAccuracy }            from './stats.js';
+import {
+  ECONOMY_CONFIG,
+  loadEconomy,
+  getLifeUpgradeCost,
+  getPowerUpCapacityUpgradeCost,
+  refillLife,
+  upgradeMaxLives,
+  upgradePowerUpCapacity,
+  buyPowerUp,
+} from './economy.js?build=v142-economy-r4';
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
 const gameWrapper     = document.getElementById('gameWrapper');
@@ -26,6 +36,8 @@ const canvas          = document.getElementById('gameCanvas');
 const overlayEl       = document.getElementById('gameOverOverlay');
 const playAgainBtn    = document.getElementById('playAgainBtn');
 const settingsOverlay = document.getElementById('settingsOverlay');
+const shopOverlay     = document.getElementById('shopOverlay');
+const shopCloseBtn    = document.getElementById('shopCloseBtn');
 const settingsApply   = document.getElementById('settingsApplyBtn');
 const settingsClose   = document.getElementById('settingsCloseBtn');
 const diffBtns        = document.querySelectorAll('.diff-btn');
@@ -48,6 +60,15 @@ const powerUpsCollectedStat = document.getElementById('powerUpsCollectedStat');
 const shieldSavesStat = document.getElementById('shieldSavesStat');
 const bossesDefeatedStat = document.getElementById('bossesDefeatedStat');
 const bestBossRankStat = document.getElementById('bestBossRankStat');
+const shopCoinBalance = document.getElementById('shopCoinBalance');
+const shopLivesValue = document.getElementById('shopLivesValue');
+const shopMessage = document.getElementById('shopMessage');
+const buyLifeBtn = document.getElementById('buyLifeBtn');
+const buyLifeCost = document.getElementById('buyLifeCost');
+const upgradeLivesBtn = document.getElementById('upgradeLivesBtn');
+const upgradeLivesCost = document.getElementById('upgradeLivesCost');
+const shopPowerBtns = document.querySelectorAll('[data-shop-power]');
+const shopCapacityBtns = document.querySelectorAll('[data-shop-capacity]');
 
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION} - ${APP_CODENAME}`;
 document.title = `${APP_NAME} | v${APP_VERSION} - ${APP_CODENAME}`;
@@ -67,6 +88,18 @@ for (const id of CONFIG.AWS_ICONS) {
 const brandLogo = new Image();
 brandLogo.src = 'assets/branding/aws-orbishot-logo.png';
 assets.brandLogo = brandLogo;
+
+assets.powerUpIcons = {};
+for (const [type, file] of Object.entries({
+  freeze: 'power-freeze.svg',
+  shield: 'power-shield.svg',
+  double: 'power-double.svg',
+  cleanup: 'power-cleanup.svg',
+})) {
+  const img = new Image();
+  img.src = `assets/ui/${file}`;
+  assets.powerUpIcons[type] = img;
+}
 
 // ── Responsive ───────────────────────────────────────────────────────────────
 // Usa VisualViewport cuando existe para responder también a barras móviles,
@@ -189,7 +222,7 @@ function fitCanvas() {
   const left = viewport.offsetLeft + (viewport.width - w) / 2;
   const top = viewport.offsetTop + (viewport.height - h) / 2;
 
-  for (const el of [overlayEl, settingsOverlay]) {
+  for (const el of [overlayEl, settingsOverlay, shopOverlay]) {
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
     el.style.width = `${w}px`;
@@ -220,8 +253,9 @@ for (const eventName of ['gesturestart', 'gesturechange', 'gestureend']) {
 // ── Estado, preferencias y estadísticas ──────────────────────────────────────
 const preferences = loadPreferences();
 const stats = loadStats();
+const economy = loadEconomy();
 let currentDifficulty = preferences.difficulty;
-let state = createInitialState(loadHighScore(), currentDifficulty, stats);
+let state = createInitialState(loadHighScore(), currentDifficulty, stats, economy);
 let inputController = null;
 const options = {
   sound: preferences.sound,
@@ -256,6 +290,90 @@ function updateStatsPanel() {
   if (bestBossRankStat) bestBossRankStat.textContent = String(stats.bestBossRank ?? '—');
 }
 
+function setShopMessage(message = '', kind = '') {
+  if (!shopMessage) return;
+  shopMessage.textContent = message;
+  shopMessage.classList.toggle('ok', kind === 'ok');
+  shopMessage.classList.toggle('error', kind === 'error');
+}
+
+function updateShopPanel() {
+  const coins = Math.max(0, Math.floor(Number(economy.coins) || 0));
+  const maxLives = Math.max(
+    ECONOMY_CONFIG.initialMaxLives,
+    Math.floor(Number(economy.maxLives) || ECONOMY_CONFIG.initialMaxLives),
+  );
+  const currentLives = Math.max(0, Math.floor(Number(state.currentLives) || 0));
+  if (shopCoinBalance) shopCoinBalance.textContent = `🪙 ${coins}`;
+  if (shopLivesValue) shopLivesValue.textContent = `${currentLives} / ${maxLives}`;
+
+  if (buyLifeCost) buyLifeCost.textContent = `🪙 ${ECONOMY_CONFIG.lifeRefillCost}`;
+  if (buyLifeBtn) {
+    buyLifeBtn.disabled = currentLives >= maxLives || coins < ECONOMY_CONFIG.lifeRefillCost;
+    buyLifeBtn.title = currentLives >= maxLives
+      ? 'Ya tienes todas tus vidas.'
+      : coins < ECONOMY_CONFIG.lifeRefillCost
+        ? 'No tienes suficientes monedas.'
+        : 'Recupera un corazón para esta run.';
+  }
+
+  const upgradeCost = getLifeUpgradeCost(economy);
+  if (upgradeLivesCost) {
+    upgradeLivesCost.textContent = upgradeCost === null
+      ? 'MÁX.'
+      : `🪙 ${upgradeCost}`;
+  }
+  if (upgradeLivesBtn) {
+    upgradeLivesBtn.disabled = upgradeCost === null || coins < upgradeCost;
+    upgradeLivesBtn.title = upgradeCost === null
+      ? 'La tienda de v1.4.2 llega hasta 5 vidas.'
+      : coins < upgradeCost
+        ? 'No tienes suficientes monedas.'
+        : 'Aumenta permanentemente la capacidad de vidas.';
+  }
+
+  shopPowerBtns.forEach(btn => {
+    const type = btn.dataset.shopPower;
+    const cost = Number(ECONOMY_CONFIG.powerUpCosts[type]) || 0;
+    const count = Math.max(0, Math.floor(Number(state.powerUpInventory?.[type]) || 0));
+    const capacity = Math.max(
+      2,
+      Math.floor(Number(economy.powerUpCaps?.[type]) || 2),
+    );
+    btn.disabled = count >= capacity || coins < cost;
+    btn.title = count >= capacity
+      ? `Inventario lleno (${count}/${capacity}).`
+      : coins < cost
+        ? 'No tienes suficientes monedas.'
+        : `Compra una carga para esta run (${count}/${capacity}).`;
+  });
+
+  shopCapacityBtns.forEach(btn => {
+    const type = btn.dataset.shopCapacity;
+    const current = Math.max(
+      2,
+      Math.floor(Number(economy.powerUpCaps?.[type]) || 2),
+    );
+    const cost = getPowerUpCapacityUpgradeCost(economy, type);
+    const label = btn.querySelector(`[data-capacity-label="${type}"]`);
+    const costEl = btn.querySelector(`[data-capacity-cost="${type}"]`);
+
+    if (label) {
+      label.textContent = cost === null
+        ? `Capacidad x${current} • MÁX.`
+        : `x${current} → x${current + 1}`;
+    }
+    if (costEl) costEl.textContent = cost === null ? 'MÁX.' : `🪙 ${cost}`;
+
+    btn.disabled = cost === null || coins < cost;
+    btn.title = cost === null
+      ? `Capacidad máxima de tienda alcanzada (x${current}).`
+      : coins < cost
+        ? 'No tienes suficientes monedas.'
+        : `Aumenta permanentemente ${type} de x${current} a x${current + 1}.`;
+  });
+}
+
 // ── startGame ─────────────────────────────────────────────────────────────────
 function startGame() {
   state.phase = 'playing';
@@ -269,10 +387,27 @@ startGame();
 // ── Play Again ────────────────────────────────────────────────────────────────
 playAgainBtn.addEventListener('click', () => {
   const hs = captureHighScore(state);
-  state = createInitialState(hs, currentDifficulty, stats);
+  state = createInitialState(hs, currentDifficulty, stats, economy);
   hideGameOver(overlayEl);
   startGame();
 });
+
+// ── Tienda ───────────────────────────────────────────────────────────────────
+function openShop() {
+  if (settingsOverlay.classList.contains('visible') || overlayEl.classList.contains('visible')) return;
+  if (state.phase === 'playing') state.phase = 'idle';
+  updateShopPanel();
+  setShopMessage('');
+  shopOverlay.classList.add('visible');
+}
+
+function closeShop() {
+  shopOverlay.classList.remove('visible');
+  if (state.phase === 'idle') state.phase = 'playing';
+}
+
+canvas.addEventListener('shop-open', openShop);
+shopCloseBtn?.addEventListener('click', closeShop);
 
 // ── Configuración ─────────────────────────────────────────────────────────────
 let selectedDiff = currentDifficulty;
@@ -305,6 +440,7 @@ function closeSettings(apply) {
   settingsOverlay.classList.remove('visible');
 
   if (apply) {
+    const difficultyChanged = selectedDiff !== currentDifficulty;
     currentDifficulty = selectedDiff;
     options.sound = soundToggle.classList.contains('on');
     options.music = musicToggle.classList.contains('on');
@@ -315,10 +451,16 @@ function closeSettings(apply) {
     applyOptions();
     savePreferences({ difficulty: currentDifficulty, ...options });
 
-    const hs = captureHighScore(state);
-    state = createInitialState(hs, currentDifficulty, stats);
-    hideGameOver(overlayEl);
-    startGame();
+    if (difficultyChanged) {
+      // Cambiar las reglas de dificultad sí inicia una run nueva. Las demás
+      // opciones se aplican en vivo y ya no regalan un reinicio/recarga.
+      const hs = captureHighScore(state);
+      state = createInitialState(hs, currentDifficulty, stats, economy);
+      hideGameOver(overlayEl);
+      startGame();
+    } else if (state.phase === 'idle') {
+      state.phase = 'playing';
+    }
   } else {
     // Los sliders tienen preescucha en vivo. Cancelar restaura los valores
     // previamente guardados y luego reanuda la partida.
@@ -331,12 +473,19 @@ function closeSettings(apply) {
 canvas.addEventListener('settings-open', openSettings);
 
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && shopOverlay.classList.contains('visible')) {
+    closeShop();
+    return;
+  }
+
   if (e.key === 'Escape' && settingsOverlay.classList.contains('visible')) {
     closeSettings(false);
+    return;
   }
 
   if ((e.key === 'p' || e.key === 's') &&
       state.phase === 'playing' &&
+      !shopOverlay.classList.contains('visible') &&
       !settingsOverlay.classList.contains('visible') &&
       !overlayEl.classList.contains('visible')) {
     openSettings();
@@ -367,6 +516,56 @@ musicVolume.addEventListener('input', () => {
   musicVolumeValue.textContent = `${Math.round(value * 100)}%`;
   setMusicVolume(value);
 });
+
+buyLifeBtn?.addEventListener('click', () => {
+  const result = refillLife(state);
+  if (result.ok) {
+    setShopMessage('Corazón recuperado.', 'ok');
+  } else if (result.reason === 'full') {
+    setShopMessage('Ya tienes todas tus vidas.', 'error');
+  } else {
+    setShopMessage('No tienes suficientes monedas.', 'error');
+  }
+  updateShopPanel();
+});
+
+upgradeLivesBtn?.addEventListener('click', () => {
+  const result = upgradeMaxLives(state);
+  if (result.ok) {
+    setShopMessage(`Capacidad ampliada a ${result.maxLives} vidas.`, 'ok');
+  } else if (result.reason === 'cap') {
+    setShopMessage('Límite de tienda alcanzado por ahora.', 'error');
+  } else {
+    setShopMessage('No tienes suficientes monedas.', 'error');
+  }
+  updateShopPanel();
+});
+
+shopPowerBtns.forEach(btn => btn.addEventListener('click', () => {
+  const type = btn.dataset.shopPower;
+  const result = buyPowerUp(state, type);
+  if (result.ok) {
+    setShopMessage('Potenciador entregado a esta run.', 'ok');
+  } else if (result.reason === 'full') {
+    setShopMessage('Ese slot ya está lleno.', 'error');
+  } else {
+    setShopMessage('No tienes suficientes monedas.', 'error');
+  }
+  updateShopPanel();
+}));
+
+shopCapacityBtns.forEach(btn => btn.addEventListener('click', () => {
+  const type = btn.dataset.shopCapacity;
+  const result = upgradePowerUpCapacity(state, type);
+  if (result.ok) {
+    setShopMessage(`Capacidad ampliada a x${result.capacity}.`, 'ok');
+  } else if (result.reason === 'cap') {
+    setShopMessage('Ese potenciador ya alcanzó el máximo de la tienda.', 'error');
+  } else {
+    setShopMessage('No tienes suficientes monedas.', 'error');
+  }
+  updateShopPanel();
+}));
 
 [soundToggle, musicToggle, comboToggle, fxToggle].forEach(btn => {
   btn.addEventListener('click', () => {

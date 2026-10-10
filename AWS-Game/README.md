@@ -2,15 +2,28 @@
 
 Juego arcade de timing y precisión con temática AWS, desarrollado originalmente durante un workshop utilizando Kiro y un flujo de Spec-Driven Development. Desde v1.4.0 el proyecto adopta oficialmente el nombre **AWS ORBISHOT**.
 
-- Normal Stability: fuera de Boss Levels, las colisiones ya no son instakill. STABILITY empieza en 100%, las colisiones restan 40%, los aciertos recuperan 8% y completar un nivel recupera 30%. Al llegar a 0% termina la partida.
+- Normal Stability: fuera de Boss Levels, las colisiones no son instakill. STABILITY empieza en 100%, las colisiones restan 40%, los aciertos recuperan 8% y completar un nivel recupera 30%. Desde v1.4.2, llegar a 0% consume una vida; la run termina al quedarse sin corazones.
 
 🎮 **Jugar ahora:**
 https://robdev512.github.io/Proyectos-Taller-AWS/AWS-Game/
 
 ## Versión actual
 
-**v1.4.1 - Audio Update**
+**v1.4.2 - Economy & Lives Update**
 
+
+
+## Economy & Lives Update (v1.4.2)
+
+- Monedas persistentes obtenidas al completar niveles y derrotar bosses.
+- Recompensas adicionales por precisión/combo en niveles normales y por ranking en Boss Levels.
+- Cada run comienza con 3 vidas; perder Stability/Overload consume un corazón antes del Game Over definitivo.
+- Las vidas máximas pueden ampliarse permanentemente de 3 a 5 desde la tienda de esta versión.
+- Cada tipo de Power-Up parte con capacidad `x2` y puede ampliarse permanentemente hasta `x5` desde la tienda.
+- En móvil, Tienda y Configuración usan accesos táctiles grandes apilados bajo el HUD superior.
+- El HUD ya soporta más de 5 vidas mediante formato compacto `♥ ×N`, dejando preparada una expansión futura.
+- Tienda independiente de Configuración, con acceso propio desde el HUD, tarjetas compactas y secciones de Vidas/Potenciadores.
+- Saldo de monedas y capacidad máxima guardados localmente.
 
 ## Audio Update (v1.4.1)
 
@@ -25,7 +38,7 @@ El objetivo es lanzar proyectiles hacia un elemento central en rotación sin gol
 
 Cada lanzamiento exitoso aumenta la puntuación y permite avanzar progresivamente a nuevos niveles.
 
-Fuera de los Boss Levels, una colisión provoca Game Over, salvo cuando existe una carga de Shield disponible.
+Fuera de los Boss Levels, las colisiones cargan Sobrecarga/Stability; al agotarse el margen se consume una vida. En Boss Levels ocurre lo mismo al llegar a 100 % de Overload. El Game Over definitivo llega cuando no quedan corazones.
 
 El juego está diseñado alrededor de un control sencillo de una sola acción, por lo que puede jugarse fácilmente con mouse, pantalla táctil o teclado.
 
@@ -45,7 +58,7 @@ Cada quinto nivel se convierte en un **Boss Level**. El control principal no cam
 - Las formas visuales no endurecen la hitbox física original; `collision.js` permanece intacto.
 - Durante bosses, chocar con una flecha anclada **ya no causa Game Over instantáneo**. Los errores cargan el medidor **OVERLOAD**.
 - Un tiro bloqueado carga `+25 %` de Overload; una colisión con una flecha carga `+30 %`. Los aciertos y cambios de fase descargan parte del medidor.
-- Si Overload llega a `100 %`, el boss gana el combate y termina la partida.
+- Si Overload llega a `100 %`, se pierde una vida; con corazones restantes el Boss Level se reinicia y la run continúa.
 - Shield sigue absorbiendo una colisión y evita que ese error cargue Overload.
 - Durante bosses, Power Core funciona como **pickup shot**: atravesarlo concede el Power-Up inmediatamente y la flecha se disipa.
 - Cada boss entrega un ranking `S/A/B/C/D` y un bonus de score.
@@ -187,6 +200,19 @@ Primera actualización mayor bajo la identidad **AWS ORBISHOT**:
 - Renderizado Canvas HiDPI para textos y líneas más nítidos al escalar.
 - Corrección del Level Bonus en niveles normales.
 
+### v1.4.1 - Audio Update
+
+- Música procedural dinámica para niveles normales y Boss Levels.
+- SFX ampliados y controles independientes de volumen para música y efectos.
+- Sin cambios de hitbox o balance principal.
+
+### v1.4.2 - Economy & Lives Update
+
+- Monedas persistentes y recompensas por progreso/desempeño.
+- Vidas por run con 3 corazones iniciales y continuaciones de nivel.
+- Tienda para recargar corazones, ampliar capacidad y comprar Power-Ups.
+- Capacidad de tienda hasta 5 vidas, con HUD preparado para cantidades mayores.
+
 ## GitHub Pages
 
 La versión estable del juego se publica mediante GitHub Pages:
@@ -215,7 +241,7 @@ En móviles verticales el Dock de Power-Ups cambia a cuatro botones circulares t
 
 ## Próximos parches planificados
 
-- **v1.4.1 — Audio Update / Soundtrack Patch:** música para niveles y bosses, más SFX y mejor identidad sonora.
-- **v1.4.2 — Economy & Lives Update:** monedas obtenidas jugando, tienda inicial y sistema de vidas con corazones (tope propuesto de 5), reutilizando la misma economía para futuras mejoras y cosméticos.
+- **v1.4.3 — UI & Progression Polish:** redefinir las estrellas de dificultad, mejorar legibilidad móvil, fullscreen/escritorio y comportamiento de configuración/dificultad.
+- **v1.4.4 — Boss Presentation & FX Polish:** grietas progresivas en capas, fragmentos/anillos físicos y primeras presentaciones de entrada para bosses.
 
 El detalle de estas ideas está en `ROADMAP.md` y puede ajustarse durante su implementación.

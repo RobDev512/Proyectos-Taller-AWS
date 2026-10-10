@@ -70,8 +70,8 @@ export function getProgression(diffKey, score, level = 1) {
   }
 }
 
-export const APP_VERSION = '1.4.1';
-export const APP_CODENAME = 'Audio Update';
+export const APP_VERSION = '1.4.2';
+export const APP_CODENAME = 'Economy & Lives Update';
 export const APP_NAME = 'AWS ORBISHOT';
 
 export const DIFFICULTIES = {

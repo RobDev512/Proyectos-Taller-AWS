@@ -1,5 +1,28 @@
 # AWS ORBISHOT — Changelog
 
+## v1.4.2 — Economy & Lives Update
+
+- UI Polish r5: en móvil el HUD recupera el espacio superior que antes reservaba Configuración; RÉCORD y vidas vuelven al borde derecho mientras Tienda/Ajustes permanecen apilados debajo.
+- Nuevo set SVG propio para Freeze, Shield, Double y Cleanup, reutilizado en el Dock y en la tienda/mejoras de capacidad.
+- Configuración deja de usar emojis y adopta iconos SVG coherentes para dificultad, sonido, música, combo y efectos visuales.
+- Nueva economía persistente con monedas guardadas en `localStorage`.
+- Los niveles normales entregan monedas por completar el objetivo, con bonus moderados por Perfect Shots y mejor combo del nivel.
+- Los Boss Levels entregan una recompensa mayor y un bonus adicional según rango `S/A/B/C/D`.
+- Nuevo sistema de vidas por run: se empieza con 3 corazones y una derrota consume una vida antes del Game Over definitivo.
+- Perder una vida reinicia el nivel actual desde su score de inicio, conservando inventario y Power Charge de la run.
+- La capacidad máxima de vidas es persistente. La tienda de v1.4.2 permite ampliarla de 3 → 4 → 5, pero el sistema y el HUD quedan preparados para cantidades mayores.
+- HUD superior con saldo de monedas y vidas; hasta 5 se dibujan corazones individuales y por encima de 5 se compactan como `♥ ×N`.
+- Tienda separada de Configuración, con botón propio en el HUD y panel independiente para recargar vidas, ampliar capacidad y comprar Freeze, Shield, Double y Cleanup.
+- Rediseño compacto de la tienda: tarjetas más pequeñas, costos visibles como chips de moneda y secciones separadas de Vidas y Potenciadores.
+- En móvil, los botones de Tienda y Configuración se muestran grandes y apilados verticalmente bajo el HUD superior.
+- Los cuatro potenciadores tienen mejoras permanentes de capacidad: parten en `x2` y la tienda de v1.4.2 permite llevar cada tipo hasta `x5`.
+- Los botones de potenciadores ahora muestran feedback de hover/presión coherente con Tienda y Configuración.
+- Configuración y Tienda usan scrollbars personalizadas acordes al estilo visual del juego.
+- Balance inicial: vida `20`, capacidad `3→4 = 60`, `4→5 = 100`; Power-Ups `12/14/16/18` monedas.
+- Aplicar cambios de sonido/música/FX ya no reinicia la run; solo cambiar la dificultad inicia una nueva partida.
+- La hitbox de `collision.js` permanece exactamente en `fp.radius * 0.35`.
+- Versión actualizada a `v1.4.2 - Economy & Lives Update`.
+
 ## v1.4.1 — Audio Update
 
 - Audio Polish r5: aumentado el volumen máximo de la música dinámica y reforzados los transitorios de lanzamiento/anclaje de flechas para que sean claramente audibles incluso con mezcla general baja.

@@ -53,6 +53,9 @@ export function ensureLevelState(state) {
   if (!Number.isFinite(state.levelTransitionTimer)) state.levelTransitionTimer = 0;
   if (!Number.isFinite(state.levelCompleteBonus)) state.levelCompleteBonus = 0;
   if (!Number.isFinite(state.completedLevel)) state.completedLevel = 0;
+  if (!Number.isFinite(state.levelStartScore)) state.levelStartScore = Math.max(0, Number(state.score) || 0);
+  if (!Number.isFinite(state.levelPerfectShots)) state.levelPerfectShots = 0;
+  if (!Number.isFinite(state.levelBestCombo) || state.levelBestCombo < 1) state.levelBestCombo = 1;
   return state;
 }
 
@@ -102,6 +105,10 @@ export function advanceToNextLevel(state) {
   ensureLevelState(state);
   state.level += 1;
   state.levelHits = 0;
+  state.levelStartScore = Math.max(0, Number(state.score) || 0);
+  state.levelPerfectShots = 0;
+  state.levelBestCombo = 1;
+  state.lastCoinReward = 0;
   state.levelTransitionTimer = 0;
   state.levelCompleteBonus = 0;
   state.completedLevel = 0;

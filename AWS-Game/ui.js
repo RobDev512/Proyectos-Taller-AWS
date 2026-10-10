@@ -24,6 +24,12 @@ export function showGameOver(overlayEl, state) {
       : 'Fin de la partida';
   }
 
+  const finalCoins = overlayEl.querySelector('#finalCoins');
+  if (finalCoins) finalCoins.textContent = String(Math.max(0, Math.floor(Number(state.economy?.coins) || 0)));
+
+  const finalMaxLives = overlayEl.querySelector('#finalMaxLives');
+  if (finalMaxLives) finalMaxLives.textContent = String(Math.max(3, Math.floor(Number(state.economy?.maxLives) || 3)));
+
   const playAgainBtn = overlayEl.querySelector('#playAgainBtn');
   if (playAgainBtn) playAgainBtn.disabled = false;
 
